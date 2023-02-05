@@ -77,5 +77,5 @@ func (m *MsgHandle) SendMsgToTaskQueue(request ziface.IRequest) {
 	fmt.Println("Add ConnID=", request.GetConnection().GetConnID(), " request MsgID=", request.GetMsgId(), "to workerID", workerID)
 	//将消息发送给队友的worker的TaskQueue即可
 	m.TaskQueue[workerID] <- request
-	
+	//
 }

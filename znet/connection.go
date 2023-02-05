@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -61,6 +62,13 @@ func (c *Connection) StartReader() {
 			fmt.Println("read msg error", err)
 			break
 		}
+		m := make(map[string]interface{})
+		err = json.Unmarshal(data, &m)
+		if err != nil {
+			fmt.Println("消息解析json错误", err)
+			continue
+		} //将json反序列化放入结构体&per2中
+		fmt.Println(m)
 		msg := Message{}
 		msg.SetMsgId(1)
 		msg.SetData(data)

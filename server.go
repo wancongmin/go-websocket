@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"websocket/config"
-	"websocket/lib/db"
-	"websocket/lib/redis"
 	"websocket/utils"
 	"websocket/ziface"
 	"websocket/znet"
@@ -64,8 +62,8 @@ func DoConnectionLost(conn ziface.Iconnection) {
 func main() {
 	utils.CustomError()
 	config.InitConf()
-	db.InitDb()
-	redis.InitRedis()
+	//db.InitDb()
+	//redis.InitRedis()
 	//创建server句柄，使用zinx的api
 	s := znet.NewServer("mysocket-01")
 	s.AddRouter(1, &PingRouter{})

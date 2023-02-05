@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"strconv"
 	"websocket/utils"
 	"websocket/ziface"
 )
@@ -49,23 +50,25 @@ func (s *Server) Start() {
 	}()
 }
 
-var cid uint32 = 1
+var cid uint32
 
 func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	defer utils.CustomError()
-	if cid > 1 {
-		panic("6666666666")
-	}
 	//如果有客户端连接过来，阻塞会返回
 	//conn,err:=listenner.AcceptTCP()
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
-
 	if err != nil {
 		fmt.Println("Accept err", err)
 		return
 	}
+	uid := req.Header.Get("uid")
+	parseInt, err := strconv.ParseInt(uid, 10, 64)
+	if err != nil {
+		fmt.Println("get uid err", err)
+	}
+	cid = uint32(parseInt)
 	//设置最大连接个数的判断，如果超过最大连接，那么关闭此新的连接
-	if s.ConnMgr.Len() >= 2 {
+	if s.ConnMgr.Len() >= 100 {
 		//TODO 给客户端相应一个超出最大连接的错误包
 		conn.Close()
 		fmt.Println("====================>>>>>>>>>>>>>>>>connection max")
