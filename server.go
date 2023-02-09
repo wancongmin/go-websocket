@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"websocket/config"
 	"websocket/utils"
@@ -32,6 +33,17 @@ func (this *HolleRouter) Handle(request ziface.IRequest) {
 	//先读取客户端数据再回写
 	fmt.Println("recv from client msgID=", request.GetMsgId(), ",data=", string(request.GetData()))
 	//err:=request.GetConnection().SendMsg(201,request.GetData())
+
+	m := znet.Msg{}
+	err := json.Unmarshal(request.GetData(), &m)
+	if err != nil {
+		fmt.Println("消息解析json错误11", err)
+	} //将json反序列化放入结构体&per2中
+	err = znet.Managers.Connections[m.UserId].SendMsg(200, request.GetData())
+	if err != nil {
+		return
+	}
+	fmt.Println(m)
 }
 
 //创建链接之后执行的钩子函数
@@ -67,7 +79,7 @@ func main() {
 	//创建server句柄，使用zinx的api
 	s := znet.NewServer("mysocket-01")
 	s.AddRouter(1, &PingRouter{})
-	//s.AddRouter(1,&HolleRouter{})
+	s.AddRouter(2, &HolleRouter{})
 
 	//注册连接的Hook钩子函数
 	s.SetConnStart(DoConnectionBegin)

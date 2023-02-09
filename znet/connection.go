@@ -34,6 +34,12 @@ type Connection struct {
 	propertyLock sync.RWMutex
 }
 
+type Msg struct {
+	MsgId  uint32
+	UserId uint32
+	Data   map[string]string
+}
+
 //初始化链接模块的方法
 
 func NewConnetion(sever ziface.Iserver, conn *websocket.Conn, connID uint32, msgHandler ziface.IMsgHandle) *Connection {
@@ -62,15 +68,16 @@ func (c *Connection) StartReader() {
 			fmt.Println("read msg error", err)
 			break
 		}
-		m := make(map[string]interface{})
+		m := Msg{}
 		err = json.Unmarshal(data, &m)
 		if err != nil {
 			fmt.Println("消息解析json错误", err)
 			continue
 		} //将json反序列化放入结构体&per2中
 		fmt.Println(m)
+		// TODO  处理错误
 		msg := Message{}
-		msg.SetMsgId(1)
+		msg.SetMsgId(m.MsgId)
 		msg.SetData(data)
 		req := Request{
 			conn: c,

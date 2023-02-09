@@ -14,11 +14,14 @@ type ConnManager struct {
 }
 
 //创建当前连接的方法
+var Managers = ConnManager{}
 
 func NewConnMamager() *ConnManager {
-	return &ConnManager{
-		Connections: make(map[uint32]ziface.Iconnection),
-	}
+	Managers.Connections = make(map[uint32]ziface.Iconnection)
+	return &Managers
+	//return &ConnManager{
+	//	Connections: make(map[uint32]ziface.Iconnection),
+	//}
 }
 
 //添加连接

@@ -43,7 +43,7 @@ func (s *Server) Start() {
 		//addr,err:=net.ResolveTCPAddr(s.IPversion,fmt.Sprintf("%s:%d",s.IP,s.Port))
 		fmt.Println("Starting application...")
 		http.HandleFunc("/ws", s.wsPage)
-		err := http.ListenAndServe(":12345", nil)
+		err := http.ListenAndServe(":1234", nil)
 		if err != nil {
 			return
 		}
