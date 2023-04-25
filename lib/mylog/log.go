@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-//继承 Logger
+// 继承 Logger
 type MyLogger struct {
 	*log.Logger
 	mu sync.Mutex
 }
 
-//日志路径
+// 日志路径
 var path = "logs/"
 
 func NewLogger(prefix string) MyLogger {
@@ -32,11 +32,26 @@ func NewLogger(prefix string) MyLogger {
 }
 
 func (l *MyLogger) Output2(calldepth int, s string) error {
-	l.Logger.Output(calldepth, s)
-	return nil
+	return l.Logger.Output(calldepth, s)
 }
 
 func Output(s, prefix string) error {
 	var std = NewLogger(prefix)
 	return std.Logger.Output(2, s)
+}
+
+func Info(s string) {
+	var std = NewLogger("info")
+	err := std.Logger.Output(2, s)
+	if err != nil {
+		return
+	}
+}
+
+func Error(s string) {
+	var std = NewLogger("error")
+	err := std.Logger.Output(2, s)
+	if err != nil {
+		return
+	}
 }

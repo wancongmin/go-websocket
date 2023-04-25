@@ -3,13 +3,15 @@ package znet
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	"log"
 	"net/http"
 	"strconv"
+	"websocket/lib/mylog"
 	"websocket/utils"
 	"websocket/ziface"
 )
 
-//iserver的接口实现，定义一个server的服务器模块
+// iserver的接口实现，定义一个server的服务器模块
 type Server struct {
 	//服务器的名称
 	Name string
@@ -31,9 +33,8 @@ type Server struct {
 	OnConnStop func(conn ziface.Iconnection)
 }
 
-//启动服务器
+// 启动服务器
 func (s *Server) Start() {
-	//fmt.Printf("start server listenner at IP:%s,Port:%d\n",s.IP,s.Port)
 	go func() {
 		defer utils.CustomError()
 		//开启消息队列及worker工作池
@@ -41,9 +42,9 @@ func (s *Server) Start() {
 		// 获取一个tcp Addr
 		//fmt.Println(s.IPversion,fmt.Sprintf("%s:%d",s.IP,s.Port))
 		//addr,err:=net.ResolveTCPAddr(s.IPversion,fmt.Sprintf("%s:%d",s.IP,s.Port))
-		fmt.Println("Starting application...")
-		http.HandleFunc("/ws", s.wsPage)
-		err := http.ListenAndServe(":1234", nil)
+		log.Println("Starting application...")
+		http.HandleFunc("/", s.wsPage)
+		err := http.ListenAndServe(":8090", nil)
 		if err != nil {
 			return
 		}
@@ -58,20 +59,27 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	//conn,err:=listenner.AcceptTCP()
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
 	if err != nil {
-		fmt.Println("Accept err", err)
+		//fmt.Println("Accept err", err)
+		mylog.Error("Accept err:" + err.Error())
 		return
 	}
 	uid := req.Header.Get("uid")
 	parseInt, err := strconv.ParseInt(uid, 10, 64)
 	if err != nil {
-		fmt.Println("get uid err", err)
+		// fmt.Println("get uid err", err)
+		mylog.Error("Get uid err:" + err.Error())
+		return
 	}
 	cid = uint32(parseInt)
 	//设置最大连接个数的判断，如果超过最大连接，那么关闭此新的连接
 	if s.ConnMgr.Len() >= 100 {
 		//TODO 给客户端相应一个超出最大连接的错误包
-		conn.Close()
-		fmt.Println("====================>>>>>>>>>>>>>>>>connection max")
+		err := conn.Close()
+		if err != nil {
+			mylog.Error("Close conn:" + err.Error())
+			return
+		}
+		mylog.Error("Connection max" + fmt.Sprintf("%v", s.ConnMgr.Len()))
 		return
 	}
 	dealConn := NewConnetion(s, conn, cid, s.MsgHandle)
@@ -82,7 +90,7 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 
 func (s *Server) Stop() {
 	//将一些服务器的资源，状态或者一些已经开辟的链接信息，进行停止回收
-	fmt.Println("[STOP Zinx server name]", s.Name)
+	log.Println("[STOP Zinx server name]", s.Name)
 	s.ConnMgr.ClearConn()
 }
 
@@ -94,7 +102,7 @@ func (s *Server) Server() {
 	select {}
 }
 
-//路由功能，给当前的服务注册一个路由方法，提供客户端的链接处理使用
+// 路由功能，给当前的服务注册一个路由方法，提供客户端的链接处理使用
 func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
 	s.MsgHandle.AddRouter(msgID, router)
 	fmt.Println("Add Router Succ!")
@@ -104,7 +112,7 @@ func (s *Server) GetConnMgr() ziface.IConnManager {
 	return s.ConnMgr
 }
 
-//初始化Server模块方法
+// 初始化Server模块方法
 func NewServer(name string) ziface.Iserver {
 	s := &Server{
 		Name:      name,
@@ -117,28 +125,28 @@ func NewServer(name string) ziface.Iserver {
 	return s
 }
 
-//注册OnConnStart 钩子函数的方法
+// 注册OnConnStart 钩子函数的方法
 func (s *Server) SetConnStart(hookFunc func(connection ziface.Iconnection)) {
 	s.OnConnStart = hookFunc
 }
 
-//注册OnConnStop 钩子函数的方法
+// 注册OnConnStop 钩子函数的方法
 func (s *Server) SetConnStop(hookFunc func(connection ziface.Iconnection)) {
 	s.OnConnStop = hookFunc
 }
 
-//调用OnConnStart 钩子函数的方法
+// 调用OnConnStart 钩子函数的方法
 func (s *Server) CallConnStart(conn ziface.Iconnection) {
 	if s.OnConnStart != nil {
-		fmt.Println("--->Cal OnConnStart()...")
+		log.Println("--->Cal OnConnStart()...")
 		s.OnConnStart(conn)
 	}
 }
 
-//调用OnConnStop 钩子函数的方法
+// 调用OnConnStop 钩子函数的方法
 func (s *Server) CallConnStop(conn ziface.Iconnection) {
 	if s.OnConnStop != nil {
-		fmt.Println("--->Cal OnConnStop()...")
+		log.Println("--->Cal OnConnStop()...")
 		s.OnConnStop(conn)
 	}
 }

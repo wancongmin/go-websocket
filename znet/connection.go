@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"log"
 	"net"
 	"sync"
+	"websocket/lib/mylog"
+	"websocket/model"
 	"websocket/ziface"
 )
 
-//链接模块
+// 链接模块
 type Connection struct {
 	//当前Conn属于哪个sever
 	TcpSever ziface.Iserver
@@ -32,12 +35,6 @@ type Connection struct {
 	property map[string]interface{}
 	//保护连接属性的锁
 	propertyLock sync.RWMutex
-}
-
-type Msg struct {
-	MsgId  uint32
-	UserId uint32
-	Data   map[string]string
 }
 
 //初始化链接模块的方法
@@ -65,16 +62,18 @@ func (c *Connection) StartReader() {
 	for {
 		_, data, err := c.Conn.ReadMessage()
 		if err != nil {
-			fmt.Println("read msg error", err)
-			break
+			mylog.Error("read msg error:" + err.Error())
+			continue
 		}
-		m := Msg{}
+		m := model.ReceiveMsg{}
 		err = json.Unmarshal(data, &m)
 		if err != nil {
-			fmt.Println("消息解析json错误", err)
+			mylog.Error("消息解析json错误:" + err.Error())
 			continue
-		} //将json反序列化放入结构体&per2中
-		fmt.Println(m)
+		}
+		if m.MsgId == 0 {
+			mylog.Error("获取MsgId不正确")
+		}
 		// TODO  处理错误
 		msg := Message{}
 		msg.SetMsgId(m.MsgId)
@@ -83,7 +82,6 @@ func (c *Connection) StartReader() {
 			conn: c,
 			msg:  msg,
 		}
-
 		c.MsgHandler.SendMsgToTaskQueue(&req)
 		//根据绑定好的MsgID找到对应处理api业务执行
 		//go c.MsgHandler.DoMsgHandler(&req)
@@ -101,9 +99,9 @@ func (c *Connection) Start() {
 	c.TcpSever.CallConnStart(c)
 }
 
-//写消息的Goroutime
+// 写消息的Goroutime
 func (c *Connection) StartWriter() {
-	fmt.Println("[Writer Gortime is running]")
+	log.Println("[Writer Gortime is running]")
 	defer fmt.Println(c.RemoteAddr().String(), "[conn Writer exit!]")
 
 	//不断的阻塞的等待channel的消息，进行写给客户端
@@ -112,7 +110,7 @@ func (c *Connection) StartWriter() {
 		case data := <-c.smgChan:
 			//有数据要写给客户端
 			if err := c.Conn.WriteMessage(websocket.TextMessage, data); err != nil {
-				fmt.Println("Send data error", err)
+				log.Println("Send data error", err)
 				return
 			}
 		case <-c.ExitChan:
@@ -122,9 +120,9 @@ func (c *Connection) StartWriter() {
 	}
 }
 
-//停止链接 结束当前的链接工作
+// 停止链接 结束当前的链接工作
 func (c *Connection) Stop() {
-	fmt.Println("Conn Stop()...ConnID=", c.ConnID)
+	log.Println("Conn Stop()...ConnID=", c.ConnID)
 	//如果当前链接已经关闭
 	if c.isClose == true {
 		return
@@ -143,27 +141,27 @@ func (c *Connection) Stop() {
 	close(c.smgChan)
 }
 
-//获取当前链接的绑定 socket conn
+// 获取当前链接的绑定 socket conn
 func (c *Connection) GetTCPConnection() *websocket.Conn {
 	return c.Conn
 }
 
-//获取当前链接模块的链接ID
+// 获取当前链接模块的链接ID
 func (c *Connection) GetConnID() uint32 {
 	return c.ConnID
 }
 
-//获取远程客户端的TCP  状态 IP port
+// 获取远程客户端的TCP  状态 IP port
 func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-//发送数据，将数据发送给远程客户端
+// 发送数据，将数据发送给远程客户端
 func (c *Connection) Send(data []byte) error {
 	return nil
 }
 
-//提供一个SendMsg方法 将我们要发送给客户端的数据，先进行封包，在发送
+// 提供一个SendMsg方法 将我们要发送给客户端的数据，先进行封包，在发送
 func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	if c.isClose == true {
 		return errors.New("Connection close when send msg")
@@ -180,18 +178,26 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	//	fmt.Println("Write msg id=",msgId," erros:",err)
 	//	return err
 	//}
+	//m := model.SendMsg{}
+	//m.MsgId = msgId
+	//m.Data = data
+	//marshal, err := json.Marshal(m)
+	//if err != nil {
+	//	mylog.Error("发送参数转换json错误:" + err.Error())
+	//	return err
+	//}
 	c.smgChan <- data
 	return nil
 }
 
-//设置链接属性
+// 设置链接属性
 func (c *Connection) SetProperty(key string, value interface{}) {
 	c.propertyLock.Lock()
 	defer c.propertyLock.Unlock()
 	c.property[key] = value
 }
 
-//获取链接属性
+// 获取链接属性
 func (c *Connection) GetProperty(key string) (interface{}, error) {
 	c.propertyLock.RLock()
 	defer c.propertyLock.RUnlock()
@@ -201,7 +207,7 @@ func (c *Connection) GetProperty(key string) (interface{}, error) {
 	return nil, errors.New("no property found")
 }
 
-//移除链接属性
+// 移除链接属性
 func (c *Connection) RemoveProperty(key string) {
 	c.propertyLock.Lock()
 	defer c.propertyLock.Unlock()
