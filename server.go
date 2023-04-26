@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"websocket/config"
+	"websocket/lib/db"
 	"websocket/lib/mylog"
 	"websocket/lib/redis"
+	"websocket/model"
 	"websocket/router"
 	"websocket/utils"
 	"websocket/ziface"
@@ -39,13 +41,15 @@ func DoConnectionLost(conn ziface.Iconnection) {
 func main() {
 	defer utils.CustomError()
 	config.InitConf()
-	//db.InitDb()
+	db.InitDb()
 	redis.InitRedis()
+	res := model.GetFriendLocation(588)
+	fmt.Println(res)
 	//创建server句柄，使用zinx的api
 	s := znet.NewServer("funParty")
 	s.AddRouter(100, &router.PingRouter{})
 	s.AddRouter(101, &router.LocationRouter{})
-	s.AddRouter(102, &router.GroupRouter{})
+	s.AddRouter(102, &router.ChangeGroupRouter{})
 
 	//注册连接的Hook钩子函数
 	s.SetConnStart(DoConnectionBegin)

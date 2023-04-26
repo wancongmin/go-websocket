@@ -6,7 +6,11 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
+	"websocket/config"
+	"websocket/lib/db"
 	"websocket/lib/mylog"
+	"websocket/model"
 	"websocket/utils"
 	"websocket/ziface"
 )
@@ -42,12 +46,18 @@ func (s *Server) Start() {
 		// 获取一个tcp Addr
 		//fmt.Println(s.IPversion,fmt.Sprintf("%s:%d",s.IP,s.Port))
 		//addr,err:=net.ResolveTCPAddr(s.IPversion,fmt.Sprintf("%s:%d",s.IP,s.Port))
-		log.Println("Starting application...")
+		var conf = &config.Conf{}
+		err := config.ConfFile.Section("conf").MapTo(conf)
+		if err != nil {
+			mylog.Error("获取配置参数不正确:" + err.Error())
+			return
+		}
 		http.HandleFunc("/", s.wsPage)
-		err := http.ListenAndServe(":8090", nil)
+		err = http.ListenAndServe(":"+conf.Port, nil)
 		if err != nil {
 			return
 		}
+		log.Println("Starting application success listen port:" + conf.Port)
 	}()
 }
 
@@ -56,23 +66,32 @@ var cid uint32
 func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	defer utils.CustomError()
 	//如果有客户端连接过来，阻塞会返回
-	//conn,err:=listenner.AcceptTCP()
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
 	if err != nil {
-		//fmt.Println("Accept err", err)
 		mylog.Error("Accept err:" + err.Error())
 		return
 	}
 	uid := req.Header.Get("uid")
 	parseInt, err := strconv.ParseInt(uid, 10, 64)
 	if err != nil {
-		// fmt.Println("get uid err", err)
 		mylog.Error("Get uid err:" + err.Error())
 		return
 	}
 	cid = uint32(parseInt)
+	user := &model.User{}
+	db.Db.Table("fa_user").Where(model.User{Id: cid}).First(user)
+	if user.Id == 0 {
+		mylog.Error("用户id不正确:" + fmt.Sprintf("%v", cid))
+		return
+	}
 	//设置最大连接个数的判断，如果超过最大连接，那么关闭此新的连接
-	if s.ConnMgr.Len() >= 100 {
+	var conf = &config.Conf{}
+	err = config.ConfFile.Section("conf").MapTo(conf)
+	if err != nil {
+		mylog.Error("获取配置参数不正确:" + err.Error())
+		return
+	}
+	if s.ConnMgr.Len() >= conf.MaxConnect {
 		//TODO 给客户端相应一个超出最大连接的错误包
 		err := conn.Close()
 		if err != nil {
@@ -85,7 +104,6 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	dealConn := NewConnetion(s, conn, cid, s.MsgHandle)
 	cid++
 	go dealConn.Start()
-
 }
 
 func (s *Server) Stop() {
@@ -97,15 +115,53 @@ func (s *Server) Stop() {
 func (s *Server) Server() {
 	//启动server 的服务器功能
 	s.Start()
-	//TODO 做一些启动服务器之后的额外工作
+	// TODO 做一些启动服务器之后的额外工作
+	s.LocationWork()
 	//阻塞状态
 	select {}
+}
+
+// 发送定位消息给用户
+func (s *Server) LocationWork() {
+	for {
+		for _, conn := range s.ConnMgr.GetTotalConnections() {
+			typeVal, err := conn.GetProperty("type")
+			if err != nil {
+				continue
+			}
+			roomType := typeVal.(string)
+			roomIdVal, err := conn.GetProperty("roomId")
+			if err != nil {
+				continue
+			}
+			roomId := roomIdVal.(string)
+			log.Println(roomId)
+			switch roomType {
+			case "1":
+				// TODO 获取密友定位
+
+			case "2":
+				// TODO 获取活动成员定位
+			case "3":
+				// TODO 讨论组成员定位
+			default:
+				continue
+			}
+			err = conn.SendMsg(201, []byte("接收到消息"))
+			if err != nil {
+				continue
+			}
+			log.Println(conn.GetProperty("type"))
+			log.Println(conn.GetProperty(""))
+			time.Sleep(1 * time.Second)
+		}
+	}
 }
 
 // 路由功能，给当前的服务注册一个路由方法，提供客户端的链接处理使用
 func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
 	s.MsgHandle.AddRouter(msgID, router)
-	fmt.Println("Add Router Succ!")
+	fmt.Println("Add Router Success!")
 }
 
 func (s *Server) GetConnMgr() ziface.IConnManager {

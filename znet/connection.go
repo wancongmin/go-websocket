@@ -10,6 +10,7 @@ import (
 	"sync"
 	"websocket/lib/mylog"
 	"websocket/model"
+	"websocket/utils"
 	"websocket/ziface"
 )
 
@@ -57,7 +58,7 @@ func NewConnetion(sever ziface.Iserver, conn *websocket.Conn, connID uint32, msg
 
 func (c *Connection) StartReader() {
 	fmt.Println("[Reader Goruntine is runing]")
-	defer fmt.Println("connID=", c.ConnID, "Reader is exit,remote addr is", c.RemoteAddr().String())
+	defer utils.CustomError()
 	defer c.Stop()
 	for {
 		_, data, err := c.Conn.ReadMessage()
@@ -102,8 +103,8 @@ func (c *Connection) Start() {
 // 写消息的Goroutime
 func (c *Connection) StartWriter() {
 	log.Println("[Writer Gortime is running]")
+	defer utils.CustomError()
 	defer fmt.Println(c.RemoteAddr().String(), "[conn Writer exit!]")
-
 	//不断的阻塞的等待channel的消息，进行写给客户端
 	for {
 		select {

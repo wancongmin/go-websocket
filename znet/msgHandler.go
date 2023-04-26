@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"websocket/lib/mylog"
 	"websocket/utils"
 	"websocket/ziface"
 )
@@ -31,7 +32,8 @@ func (m *MsgHandle) DoMsgHandler(request ziface.IRequest) {
 	//1 从request中找到msgID
 	handler, ok := m.Apis[request.GetMsgId()]
 	if !ok {
-		fmt.Println("api msgID=", request.GetMsgId(), "is not found")
+		mylog.Error("api msgID=" + fmt.Sprintf("%v", request.GetMsgId()) + "is not found")
+		return
 	}
 	//根据msgid 调动对应的routeryew
 	handler.PreHandle(request)

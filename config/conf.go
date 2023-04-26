@@ -16,6 +16,11 @@ func InitConf() {
 	log.Println("config 初始化成功,")
 }
 
+type Conf struct {
+	Port       string
+	MaxConnect uint32
+}
+
 type Database struct {
 	Type     string
 	User     string

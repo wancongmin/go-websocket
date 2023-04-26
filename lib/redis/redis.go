@@ -10,8 +10,10 @@ var Redis *redis.Client
 
 func InitRedis() {
 	var conf = &config.Redis{}
-	config.ConfFile.Section("redis").MapTo(conf)
-
+	err := config.ConfFile.Section("redis").MapTo(conf)
+	if err != nil {
+		panic("获取配置参数不正确")
+	}
 	Redis = redis.NewClient(&redis.Options{
 		Addr:     conf.Host,
 		Password: conf.Password, // password set
