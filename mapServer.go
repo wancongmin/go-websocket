@@ -29,12 +29,12 @@ func DoConnectionLost(conn ziface.Iconnection) {
 	log.Println("====>DoConnectionLost is Call")
 	log.Println("====>conn ID =", conn.GetConnID())
 	//获取链接属性
-	if val, err := conn.GetProperty("name"); err == nil {
-		log.Println("name", val)
-	}
-	if val, err := conn.GetProperty("home"); err == nil {
-		log.Println("home", val)
-	}
+	//if val, err := conn.GetProperty("name"); err == nil {
+	//	log.Println("name", val)
+	//}
+	//if val, err := conn.GetProperty("home"); err == nil {
+	//	log.Println("home", val)
+	//}
 }
 
 func main() {

@@ -46,7 +46,7 @@ func (this *HolleRouter) Handle(request ziface.IRequest) {
 	//}
 }
 
-// Handle MsgId=100
+// Handle MsgId=100  心跳
 func (this *PingRouter) Handle(request ziface.IRequest) {
 	//先读取客户端数据再回写
 	log.Println("recv from client msgID=", request.GetMsgId(), ",data=", string(request.GetData()))
@@ -65,7 +65,7 @@ func (this *PingRouter) Handle(request ziface.IRequest) {
 	}
 }
 
-// Handle MsgId=101
+// Handle MsgId=101 上传定位
 func (this *LocationRouter) Handle(request ziface.IRequest) {
 	// 获取定位信息并存入redis
 	uid := request.GetConnection().GetConnID()
@@ -98,7 +98,7 @@ func (this *LocationRouter) Handle(request ziface.IRequest) {
 	model.SetUserLocation(user)
 }
 
-// Handle MsgId=102
+// Handle MsgId=102 切换频道
 func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
 	// 获取定位信息并存入redis
 	uid := request.GetConnection().GetConnID()

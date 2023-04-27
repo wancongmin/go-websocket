@@ -25,8 +25,10 @@ func SetUserLocation(request User) {
 	result, err := redis.Redis.Get(userKey).Result()
 	var user User
 	if err != nil {
-		db.Db.Table("fa_user").Select("id,nickname,mobile,avatar,gender").Where("id = ?", request.Id).First(&user)
-		fmt.Println(user)
+		db.Db.Table("fa_user").
+			Select("id,nickname,mobile,avatar,gender").
+			Where("id = ?", request.Id).
+			First(&user)
 		if user.Id == 0 {
 			return
 		}
@@ -37,7 +39,6 @@ func SetUserLocation(request User) {
 		}
 		redis.Redis.Set(userKey, marshal, 1200*time.Second)
 	} else {
-		var user User
 		err := json.Unmarshal([]byte(result), &user)
 		if err != nil {
 			return
@@ -55,7 +56,7 @@ func SetUserLocation(request User) {
 }
 
 func GetUserLocation(userId uint32) User {
-	var user User
+	user := User{}
 	key := "mapLocation:uid_" + fmt.Sprintf("%v", userId)
 	result, err := redis.Redis.Get(key).Result()
 	if err != nil {

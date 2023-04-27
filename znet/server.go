@@ -159,8 +159,8 @@ func (s *Server) LocationWork() {
 			conn.SendMsg(201, marshal)
 			log.Println(conn.GetProperty("type"))
 			log.Println(conn.GetProperty("roomId"))
-			time.Sleep(3 * time.Second)
 		}
+		time.Sleep(3 * time.Second)
 	}
 }
 
