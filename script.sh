@@ -25,7 +25,7 @@ start(){
  if [ $? -eq "0" ]; then
  echo "${APP_NAME} is already running. pid=${pid} ."
  else
-  nohup ./${APP_NAME} > ../logs/mapServer.txt 2>&1 &
+  nohup go run ./${APP_NAME} > ../logs/mapServer.txt 2>&1 &
  echo "${APP_NAME} start success"
  fi
 }
