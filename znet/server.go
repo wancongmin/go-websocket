@@ -73,7 +73,7 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	uid := req.Header.Get("uid")
-	log.Println(uid)
+	log.Println(uid, 9999999999999999999)
 	parseInt, err := strconv.ParseInt(uid, 10, 64)
 	if err != nil {
 		mylog.Error("Get uid err:" + err.Error())
