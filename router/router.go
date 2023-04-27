@@ -2,11 +2,8 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"time"
 	"websocket/lib/mylog"
-	"websocket/lib/redis"
 	"websocket/model"
 	"websocket/ziface"
 	"websocket/znet"
@@ -49,6 +46,7 @@ func (this *HolleRouter) Handle(request ziface.IRequest) {
 	//}
 }
 
+// Handle MsgId=100
 func (this *PingRouter) Handle(request ziface.IRequest) {
 	//先读取客户端数据再回写
 	log.Println("recv from client msgID=", request.GetMsgId(), ",data=", string(request.GetData()))
@@ -67,6 +65,7 @@ func (this *PingRouter) Handle(request ziface.IRequest) {
 	}
 }
 
+// Handle MsgId=101
 func (this *LocationRouter) Handle(request ziface.IRequest) {
 	// 获取定位信息并存入redis
 	uid := request.GetConnection().GetConnID()
@@ -89,11 +88,17 @@ func (this *LocationRouter) Handle(request ziface.IRequest) {
 		mylog.Error("get latitude empty")
 		return
 	}
-	key := "mapLocation:uid_" + fmt.Sprintf("%v", uid)
-	redis.Redis.HMSet(key, "longitude", longitude, "latitude", latitude)
-	redis.Redis.Expire(key, 300*time.Second)
+	electricity := msg.Data["electricity"]
+	user := model.User{
+		Id:          uid,
+		Longitude:   longitude,
+		Latitude:    latitude,
+		Electricity: electricity,
+	}
+	model.SetUserLocation(user)
 }
 
+// Handle MsgId=102
 func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
 	// 获取定位信息并存入redis
 	uid := request.GetConnection().GetConnID()
@@ -115,15 +120,13 @@ func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
 		// roomType值错误
 		return
 	}
-	roomId, ok := msg.Data["roomId"]
-	if roomType != "1" && !ok {
-		mylog.Error("get roomId empty")
-		return
-	}
 	request.GetConnection().SetProperty("type", roomType)
-	request.GetConnection().SetProperty("roomId", roomId)
-	key := "mapUserProperty:uid_" + fmt.Sprintf("%v", uid)
-	redis.Redis.HMSet(key, "type", roomType, "roomId", roomId)
-	log.Println("change group type success ", "type:"+roomType, "roomId:"+roomId)
-	//fmt.Println(this.ConnMgr.GetTotalConnections())
+	if roomType == "2" || roomType == "3" {
+		if roomId, ok := msg.Data["roomId"]; ok {
+			request.GetConnection().SetProperty("roomId", roomId)
+			log.Println("change group type success ", "type:"+roomType, "roomId:"+roomId)
+		}
+	} else {
+		log.Println("change group type success ", "type:"+roomType)
+	}
 }

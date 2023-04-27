@@ -16,3 +16,4 @@
 .git
 .idea
 logs
+config/conf.ini

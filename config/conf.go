@@ -19,6 +19,7 @@ func InitConf() {
 type Conf struct {
 	Port       string
 	MaxConnect uint32
+	OssUrl     string
 }
 
 type Database struct {

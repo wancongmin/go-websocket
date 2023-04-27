@@ -7,7 +7,6 @@ import (
 	"websocket/lib/db"
 	"websocket/lib/mylog"
 	"websocket/lib/redis"
-	"websocket/model"
 	"websocket/router"
 	"websocket/utils"
 	"websocket/ziface"
@@ -43,8 +42,6 @@ func main() {
 	config.InitConf()
 	db.InitDb()
 	redis.InitRedis()
-	res := model.GetFriendLocation(588)
-	fmt.Println(res)
 	//创建server句柄，使用zinx的api
 	s := znet.NewServer("funParty")
 	s.AddRouter(100, &router.PingRouter{})

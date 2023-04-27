@@ -10,3 +10,8 @@ type SendStringMsg struct {
 	MsgId uint32
 	Data  string
 }
+
+type SendLocationMsg struct {
+	MsgId uint32
+	Users []User
+}

@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
@@ -130,30 +131,35 @@ func (s *Server) LocationWork() {
 				continue
 			}
 			roomType := typeVal.(string)
-			roomIdVal, err := conn.GetProperty("roomId")
-			if err != nil {
-				continue
-			}
-			roomId := roomIdVal.(string)
-			log.Println(roomId)
+			fmt.Println("type:", roomType)
+			userId := conn.GetConnID()
+			var message model.SendLocationMsg
+			message.MsgId = 201
 			switch roomType {
 			case "1":
 				// TODO 获取密友定位
-
-			case "2":
+				message.Users = model.GetFriendLocation(userId)
+			case "2", "3":
 				// TODO 获取活动成员定位
-			case "3":
-				// TODO 讨论组成员定位
+				roomIdVal, err := conn.GetProperty("roomId")
+				if err != nil {
+					continue
+				}
+				roomId := roomIdVal.(string)
+				log.Println(roomId)
 			default:
+				time.Sleep(3 * time.Second)
 				continue
 			}
-			err = conn.SendMsg(201, []byte("接收到消息"))
+			fmt.Println(message)
+			marshal, err := json.Marshal(message)
 			if err != nil {
 				continue
 			}
+			conn.SendMsg(201, marshal)
 			log.Println(conn.GetProperty("type"))
-			log.Println(conn.GetProperty(""))
-			time.Sleep(1 * time.Second)
+			log.Println(conn.GetProperty("roomId"))
+			time.Sleep(3 * time.Second)
 		}
 	}
 }
