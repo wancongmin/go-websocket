@@ -73,6 +73,7 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	uid := req.Header.Get("uid")
+	log.Println(uid)
 	parseInt, err := strconv.ParseInt(uid, 10, 64)
 	if err != nil {
 		mylog.Error("Get uid err:" + err.Error())
@@ -131,7 +132,6 @@ func (s *Server) LocationWork() {
 				continue
 			}
 			roomType := typeVal.(string)
-			fmt.Println("type:", roomType)
 			userId := conn.GetConnID()
 			var message model.SendLocationMsg
 			message.MsgId = 201
