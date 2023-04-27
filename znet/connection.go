@@ -64,7 +64,8 @@ func (c *Connection) StartReader() {
 		_, data, err := c.Conn.ReadMessage()
 		if err != nil {
 			mylog.Error("read msg error:" + err.Error())
-			continue
+			c.Conn.Close()
+			return
 		}
 		m := model.ReceiveMsg{}
 		err = json.Unmarshal(data, &m)
