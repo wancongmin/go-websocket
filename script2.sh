@@ -4,7 +4,7 @@
 echo "------------$(date +%F' '%T)------------"
 # 开发重启脚本
 
-file=mapServer
+file=map-server
 
 getPid() {
   docmd=$(ps aux | grep ${file} | grep ${file} | grep -v 'grep' | grep -v '\.sh' | awk '{print $2}')
@@ -23,7 +23,7 @@ start() {
     printf "\n"
     printf "正在执行启动...稍候"
     printf "\n"
-    nohup ./material-mis >/dev/null 2>&1 &
+    nohup ./map-server >../logs/map-server.txt 2>&1 &
     pidstr=$(getPid)
     echo "start with pids $pidstr Successful"
   fi
