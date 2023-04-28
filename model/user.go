@@ -18,12 +18,13 @@ type User struct {
 	Longitude   string
 	Latitude    string
 	Electricity string
-	GhostType   int
-	GhostTime   int
+	GhostType   int `gorm:"ghost_type"`
+	GhostTime   int `gorm:"ghost_time"`
 }
 
 func SetUserLocation(request User) {
 	userKey := "quparty_user:uid_" + fmt.Sprintf("%v", request.Id)
+	mpaKey := "mapLocation:uid_" + fmt.Sprintf("%v", request.Id)
 	result, err := redis.Redis.Get(userKey).Result()
 	var user User
 	if err == nil {
@@ -33,17 +34,20 @@ func SetUserLocation(request User) {
 		}
 	} else {
 		db.Db.Table("fa_user").
-			Select("id,nickname,mobile,avatar,gender").
+			Select("id,nickname,mobile,avatar,gender,ghost_type,ghost_time").
 			Where("id = ?", request.Id).
 			First(&user)
+		fmt.Printf("%#v\n", user)
 		if user.Id == 0 {
 			return
 		}
 		if user.GhostType == 1 {
+			redis.Redis.Del(mpaKey)
 			return
 		}
 		if user.GhostType == 2 || user.GhostType == 3 {
 			if user.GhostTime > int(time.Now().Unix()) {
+				redis.Redis.Del(mpaKey)
 				return
 			}
 		}
@@ -52,17 +56,16 @@ func SetUserLocation(request User) {
 		if err != nil {
 			return
 		}
-		redis.Redis.Set(userKey, marshal, 60*time.Second)
+		redis.Redis.Set(userKey, marshal, 600*time.Second)
 	}
 	user.Longitude = request.Longitude
 	user.Latitude = request.Latitude
 	user.Electricity = request.Electricity
-	key := "mapLocation:uid_" + fmt.Sprintf("%v", user.Id)
 	marshal, err := json.Marshal(user)
 	if err != nil {
 		return
 	}
-	redis.Redis.Set(key, marshal, 300*time.Second)
+	redis.Redis.Set(mpaKey, marshal, 300*time.Second)
 }
 
 func GetUserLocation(userId uint32) User {
