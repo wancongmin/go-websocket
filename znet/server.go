@@ -147,20 +147,33 @@ func (s *Server) LocationWork() {
 				if err != nil {
 					continue
 				}
-				roomId := roomIdVal.(string)
+				roomId, err := strconv.Atoi(roomIdVal.(string))
+				if err != nil {
+					continue
+				}
+				if roomId == 0 && len(roomIdVal.(string)) > 0 {
+					f, err := strconv.ParseFloat(roomIdVal.(string), 64)
+					if err != nil {
+						log.Println("get roomId err")
+						continue
+					}
+					roomId = int(f)
+				}
 				log.Println(roomId)
+				if roomType == "2" {
+					message.Users = model.GetActivityMemberLocation(roomId)
+				} else {
+					message.Users = model.GetClubMemberLocation(roomId)
+				}
 			default:
 				time.Sleep(3 * time.Second)
 				continue
 			}
-			fmt.Println(message)
 			marshal, err := json.Marshal(message)
 			if err != nil {
 				continue
 			}
 			conn.SendMsg(201, marshal)
-			log.Println(conn.GetProperty("type"))
-			log.Println(conn.GetProperty("roomId"))
 		}
 		time.Sleep(3 * time.Second)
 	}

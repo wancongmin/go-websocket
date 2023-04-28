@@ -18,13 +18,20 @@ type User struct {
 	Longitude   string
 	Latitude    string
 	Electricity string
+	GhostType   int
+	GhostTime   int
 }
 
 func SetUserLocation(request User) {
 	userKey := "quparty_user:uid_" + fmt.Sprintf("%v", request.Id)
 	result, err := redis.Redis.Get(userKey).Result()
 	var user User
-	if err != nil {
+	if err == nil {
+		err := json.Unmarshal([]byte(result), &user)
+		if err != nil {
+			return
+		}
+	} else {
 		db.Db.Table("fa_user").
 			Select("id,nickname,mobile,avatar,gender").
 			Where("id = ?", request.Id).
@@ -32,17 +39,20 @@ func SetUserLocation(request User) {
 		if user.Id == 0 {
 			return
 		}
+		if user.GhostType == 1 {
+			return
+		}
+		if user.GhostType == 2 || user.GhostType == 3 {
+			if user.GhostTime > int(time.Now().Unix()) {
+				return
+			}
+		}
 		user.Avatar = utils.CdnUrl(user.Avatar)
 		marshal, err := json.Marshal(user)
 		if err != nil {
 			return
 		}
-		redis.Redis.Set(userKey, marshal, 1200*time.Second)
-	} else {
-		err := json.Unmarshal([]byte(result), &user)
-		if err != nil {
-			return
-		}
+		redis.Redis.Set(userKey, marshal, 60*time.Second)
 	}
 	user.Longitude = request.Longitude
 	user.Latitude = request.Latitude
