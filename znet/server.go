@@ -66,10 +66,12 @@ var cid uint32
 
 func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	defer utils.CustomError()
+	var conn *websocket.Conn
 	//如果有客户端连接过来，阻塞会返回
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
 	if err != nil {
 		mylog.Error("Accept err:" + err.Error())
+		_ = conn.Close()
 		return
 	}
 	uid := req.Header.Get("uid")
@@ -79,6 +81,7 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	parseInt, err := strconv.ParseInt(uid, 10, 64)
 	if err != nil {
 		mylog.Error("Get uid err:" + err.Error())
+		_ = conn.Close()
 		return
 	}
 	cid = uint32(parseInt)
@@ -86,6 +89,13 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	db.Db.Table("fa_user").Where(model.User{Id: cid}).First(user)
 	if user.Id == 0 {
 		mylog.Error("用户id不正确:" + fmt.Sprintf("%v", cid))
+		_ = conn.Close()
+		return
+	}
+	ConnMgr := s.ConnMgr.GetTotalConnections()
+	if _, ok := ConnMgr[cid]; ok {
+		mylog.Error("当前id已存在，不可重复登录:" + fmt.Sprintf("%v", cid))
+		_ = conn.Close()
 		return
 	}
 	//设置最大连接个数的判断，如果超过最大连接，那么关闭此新的连接
@@ -93,6 +103,7 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	err = config.ConfFile.Section("conf").MapTo(conf)
 	if err != nil {
 		mylog.Error("获取配置参数不正确:" + err.Error())
+		_ = conn.Close()
 		return
 	}
 	if s.ConnMgr.Len() >= conf.MaxConnect {
@@ -100,9 +111,11 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		err := conn.Close()
 		if err != nil {
 			mylog.Error("Close conn:" + err.Error())
+			_ = conn.Close()
 			return
 		}
 		mylog.Error("Connection max" + fmt.Sprintf("%v", s.ConnMgr.Len()))
+		_ = conn.Close()
 		return
 	}
 	dealConn := NewConnetion(s, conn, cid, s.MsgHandle)
