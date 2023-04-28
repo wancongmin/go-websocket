@@ -1,76 +1,63 @@
+
 #!/bin/bash
-#这里可替换为你自己的执行程序，其他代码无需更改
-APP_NAME=mapServer.go
 
-#使用说明，用来提示输入参数
-usage() {
- echo "Usage: sh 脚本名.sh [start|stop|restart|status]"
- exit 1
+echo "------------$(date +%F' '%T)------------"
+# 开发重启脚本
+
+file=map-server
+
+getPid() {
+  docmd=$(ps aux | grep ${file} | grep ${file} | grep -v 'grep' | grep -v '\.sh' | awk '{print $2}')
+  echo $docmd
 }
 
-#检查程序是否在运行
-is_exist(){
- pid=`ps -ef|grep $APP_NAME|grep -v grep|awk '{print $2}' `
- #如果不存在返回1，存在返回0
- if [ -z "${pid}" ]; then
- return 1
- else
- return 0
- fi
+start() {
+  pidstr=$(getPid)
+  if [ -n "$pidstr" ]; then
+    echo "running with pids $pidstr"
+  else
+    rm -rf map-server
+    echo "正在编译中..."
+    go build
+    sleep 0.5
+    printf "\n"
+    printf "正在执行启动...稍候"
+    printf "\n"
+    nohup ./map-server >../logs/map-server.txt 2>&1 &
+    pidstr=$(getPid)
+    echo "start with pids $pidstr Successful"
+  fi
 }
 
-#启动方法
-start(){
- is_exist
- if [ $? -eq "0" ]; then
- echo "${APP_NAME} is already running. pid=${pid} ."
- else
-  nohup go run ./${APP_NAME} > ../logs/mapServer.txt 2>&1 &
- echo "${APP_NAME} start success"
- fi
+stop() {
+
+  pidstr=$(getPid)
+  if [ ! -n "$pidstr" ]; then
+    echo "Not Executed!"
+    return
+  fi
+
+  echo "kill $pidstr done"
+  kill $pidstr
+
 }
 
-#停止方法
-stop(){
- is_exist
- if [ $? -eq "0" ]; then
- kill -9 $pid
- else
- echo "${APP_NAME} is not running"
- fi
+restart() {
+  stop
+  start
 }
 
-#输出运行状态
-status(){
- is_exist
- if [ $? -eq "0" ]; then
- echo "${APP_NAME} is running. Pid is ${pid}"
- else
- echo "${APP_NAME} is NOT running."
- fi
-}
-
-#重启
-restart(){
- stop
- start
-}
-
-#根据输入参数，选择执行对应方法，不输入则执行使用说明
 case "$1" in
- "start")
- start
- ;;
- "stop")
- stop
- ;;
- "status")
- status
- ;;
- "restart")
- restart
- ;;
- *)
- usage
- ;;
+start)
+  start
+  ;;
+stop)
+  stop
+  ;;
+restart)
+  restart
+  ;;
+getpid)
+  getPid
+  ;;
 esac
