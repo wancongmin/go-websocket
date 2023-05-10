@@ -11,7 +11,7 @@ type ClubActivityOrder struct {
 	PositionShow int
 }
 
-func GetActivityMemberLocation(activityId int) []User {
+func GetActivityMemberLocation(activityId int, userId uint32) []User {
 	var users []User
 	if activityId == 0 {
 		return users
@@ -21,6 +21,7 @@ func GetActivityMemberLocation(activityId int) []User {
 		Select("id,user_id").
 		Where(ClubActivityOrder{ActivityId: activityId, PositionShow: 1}).
 		Where("status IN ?", []string{"1", "2", "3"}).
+		Where("user_id <> ?", userId).
 		Find(&members)
 	for _, member := range members {
 		user := GetUserLocation(uint32(member.UserId))

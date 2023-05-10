@@ -174,9 +174,9 @@ func (s *Server) LocationWork() {
 				}
 				log.Println(roomId)
 				if roomType == "2" {
-					message.Users = model.GetActivityMemberLocation(roomId)
+					message.Users = model.GetActivityMemberLocation(roomId, userId)
 				} else {
-					message.Users = model.GetClubMemberLocation(roomId)
+					message.Users = model.GetClubMemberLocation(roomId, userId)
 				}
 			default:
 				time.Sleep(3 * time.Second)

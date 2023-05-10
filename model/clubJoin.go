@@ -10,7 +10,7 @@ type ClubJoin struct {
 	PositionShow int
 }
 
-func GetClubMemberLocation(clubId int) []User {
+func GetClubMemberLocation(clubId int, userId uint32) []User {
 	var users []User
 	if clubId == 0 {
 		return users
@@ -19,6 +19,7 @@ func GetClubMemberLocation(clubId int) []User {
 	db.Db.Table("fa_club_join").
 		Select("id,user_id").
 		Where(ClubJoin{ClubId: clubId, Status: 2, PositionShow: 1}).
+		Where("user_id <> ?", userId).
 		Find(&members)
 	for _, member := range members {
 		user := GetUserLocation(uint32(member.UserId))
