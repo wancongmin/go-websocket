@@ -2,7 +2,6 @@ package router
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"websocket/lib/mylog"
 	"websocket/model"
@@ -79,6 +78,8 @@ func (this *LocationRouter) Handle(request ziface.IRequest) {
 		mylog.Error("Unmarshal msg err:" + err.Error())
 		return
 	}
+	log.Println("-----------定位信息------------")
+	log.Printf("%+v", msg)
 	longitude, ok := msg.Data["longitude"]
 	if !ok {
 		mylog.Error("get longitude empty")
@@ -112,7 +113,8 @@ func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
 		mylog.Error("Unmarshal msg err:" + err.Error())
 		return
 	}
-	fmt.Printf("%+v", msg)
+	log.Println("-----------切换频道------------")
+	log.Printf("%+v", msg)
 	roomType, ok := msg.Data["type"]
 	if !ok {
 		mylog.Error("get room type empty")
