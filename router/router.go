@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"websocket/lib/mylog"
 	"websocket/model"
@@ -111,6 +112,7 @@ func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
 		mylog.Error("Unmarshal msg err:" + err.Error())
 		return
 	}
+	fmt.Printf("%+v", msg)
 	roomType, ok := msg.Data["type"]
 	if !ok {
 		mylog.Error("get room type empty")
