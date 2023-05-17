@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 	"websocket/lib/db"
 	"websocket/lib/redis"
@@ -66,6 +67,8 @@ func SetUserLocation(request User) {
 		return
 	}
 	redis.Redis.Set(mpaKey, marshal, 300*time.Second)
+	log.Println("-----------上传定位成功------------")
+	log.Printf("%+v", user)
 }
 
 func GetUserLocation(userId uint32) User {

@@ -173,7 +173,6 @@ func (s *Server) LocationWork() {
 					}
 					roomId = int(f)
 				}
-				log.Println(roomId)
 				if roomType == "2" {
 					message.Users = model.GetActivityMemberLocation(roomId, userId)
 				} else {

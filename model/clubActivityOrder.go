@@ -1,6 +1,8 @@
 package model
 
-import "websocket/lib/db"
+import (
+	"websocket/lib/db"
+)
 
 type ClubActivityOrder struct {
 	Id           int
@@ -22,6 +24,7 @@ func GetActivityMemberLocation(activityId int, userId uint32) []User {
 		Where(ClubActivityOrder{ActivityId: activityId, PositionShow: 1}).
 		Where("status IN ?", []string{"1", "2", "3"}).
 		Where("user_id <> ?", userId).
+		Group("user_id").
 		Find(&members)
 	for _, member := range members {
 		user := GetUserLocation(uint32(member.UserId))
