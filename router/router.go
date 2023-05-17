@@ -78,8 +78,6 @@ func (this *LocationRouter) Handle(request ziface.IRequest) {
 		mylog.Error("Unmarshal msg err:" + err.Error())
 		return
 	}
-	log.Println("-----------定位信息------------")
-	log.Printf("%+v", msg)
 	longitude, ok := msg.Data["longitude"]
 	if !ok {
 		mylog.Error("get longitude empty")

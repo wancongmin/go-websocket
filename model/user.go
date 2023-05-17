@@ -57,7 +57,7 @@ func SetUserLocation(request User) {
 		if err != nil {
 			return
 		}
-		redis.Redis.Set(userKey, marshal, 6000*time.Second)
+		redis.Redis.Set(userKey, marshal, 1800*time.Second)
 	}
 	user.Longitude = request.Longitude
 	user.Latitude = request.Latitude
@@ -66,7 +66,7 @@ func SetUserLocation(request User) {
 	if err != nil {
 		return
 	}
-	redis.Redis.Set(mpaKey, marshal, 3000*time.Second)
+	redis.Redis.Set(mpaKey, marshal, 1800*time.Second)
 	log.Println("-----------上传定位成功------------")
 	log.Printf("%+v", user)
 }
