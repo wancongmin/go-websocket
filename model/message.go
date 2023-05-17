@@ -12,6 +12,8 @@ type SendStringMsg struct {
 }
 
 type SendLocationMsg struct {
-	MsgId uint32
-	Users []User
+	MsgId  uint32
+	Type   string
+	RoomId int
+	Users  []User
 }

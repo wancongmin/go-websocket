@@ -150,6 +150,7 @@ func (s *Server) LocationWork() {
 			userId := conn.GetConnID()
 			var message model.SendLocationMsg
 			message.MsgId = 201
+			message.Type = roomType
 			switch roomType {
 			case "1":
 				// TODO 获取密友定位
@@ -178,6 +179,7 @@ func (s *Server) LocationWork() {
 				} else {
 					message.Users = model.GetClubMemberLocation(roomId, userId)
 				}
+				message.RoomId = roomId
 			default:
 				time.Sleep(3 * time.Second)
 				continue
