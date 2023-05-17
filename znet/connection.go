@@ -70,7 +70,7 @@ func (c *Connection) StartReader() {
 		m := model.ReceiveMsg{}
 		err = json.Unmarshal(data, &m)
 		if err != nil {
-			mylog.Error("消息解析json错误:" + err.Error())
+			mylog.Error("消息解析json错误:" + err.Error() + "data:" + string(data))
 			continue
 		}
 		if m.MsgId == 0 {
