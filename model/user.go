@@ -52,12 +52,12 @@ func SetUserLocation(request User) {
 				return
 			}
 		}
-		user.Avatar = utils.CdnUrl(user.Avatar)
+		user.Avatar = utils.CdnUrl(user.Avatar) + "?x-oss-process=image/resize,w_100,m_lfit"
 		marshal, err := json.Marshal(user)
 		if err != nil {
 			return
 		}
-		redis.Redis.Set(userKey, marshal, 1800*time.Second)
+		redis.Redis.Set(userKey, marshal, 600*time.Second)
 	}
 	user.Longitude = request.Longitude
 	user.Latitude = request.Latitude
@@ -66,7 +66,7 @@ func SetUserLocation(request User) {
 	if err != nil {
 		return
 	}
-	redis.Redis.Set(mpaKey, marshal, 1800*time.Second)
+	redis.Redis.Set(mpaKey, marshal, 600*time.Second)
 	log.Println("-----------上传定位成功------------")
 	log.Printf("%+v", user)
 }
