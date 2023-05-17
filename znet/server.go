@@ -151,6 +151,7 @@ func (s *Server) LocationWork() {
 			var message model.SendLocationMsg
 			message.MsgId = 201
 			message.Type = roomType
+			message.UserId = userId
 			switch roomType {
 			case "1":
 				// TODO 获取密友定位
