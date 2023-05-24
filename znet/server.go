@@ -70,8 +70,6 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	//如果有客户端连接过来，阻塞会返回
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
 	if err != nil {
-		mylog.Error("Accept err:" + err.Error())
-		_ = conn.Close()
 		return
 	}
 	uid := req.Header.Get("uid")
