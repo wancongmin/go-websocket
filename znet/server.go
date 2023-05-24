@@ -139,7 +139,7 @@ func (s *Server) Server() {
 // 发送定位消息给用户
 func (s *Server) LocationWork() {
 	for {
-		for _, conn := range s.ConnMgr.GetTotalConnections() {
+		for _, conn := range s.GetConnMgr().GetTotalConnections() {
 			typeVal, err := conn.GetProperty("type")
 			if err != nil {
 				continue
