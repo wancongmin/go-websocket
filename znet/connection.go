@@ -63,7 +63,7 @@ func (c *Connection) StartReader() {
 	for {
 		_, data, err := c.Conn.ReadMessage()
 		if err != nil {
-			mylog.Error("read msg error:" + err.Error())
+			// mylog.Error("read msg error:" + err.Error())
 			c.Conn.Close()
 			return
 		}

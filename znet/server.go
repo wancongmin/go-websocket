@@ -186,7 +186,9 @@ func (s *Server) LocationWork() {
 			if err != nil {
 				continue
 			}
-			conn.SendMsg(201, marshal)
+			if conn, ok := s.GetConnMgr().GetTotalConnections()[userId]; ok {
+				conn.SendMsg(201, marshal)
+			}
 		}
 		time.Sleep(3 * time.Second)
 	}
