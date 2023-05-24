@@ -165,6 +165,7 @@ func (c *Connection) Send(data []byte) error {
 
 // 提供一个SendMsg方法 将我们要发送给客户端的数据，先进行封包，在发送
 func (c *Connection) SendMsg(msgId uint32, data []byte) error {
+	defer utils.CustomError()
 	if c.isClose == true {
 		return errors.New("Connection close when send msg")
 	}
