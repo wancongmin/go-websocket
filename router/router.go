@@ -3,6 +3,7 @@ package router
 import (
 	"encoding/json"
 	"log"
+	"strconv"
 	"websocket/lib/mylog"
 	"websocket/model"
 	"websocket/ziface"
@@ -125,6 +126,25 @@ func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
 		if roomId, ok := msg.Data["roomId"]; ok {
 			request.GetConnection().SetProperty("roomId", roomId)
 			log.Println("change group type success ", "type:"+roomType, "roomId:"+roomId)
+			var message model.SendLocationMsg
+			message.MsgId = 201
+			message.Type = roomType
+			message.UserId = uid
+			intRoomId, err := strconv.Atoi(roomId)
+			if err != nil {
+				return
+			}
+			message.RoomId = intRoomId
+			if roomType == "2" {
+				message.Users = model.GetActivityMemberLocation(intRoomId, uid)
+			} else {
+				message.Users = model.GetClubMemberLocation(intRoomId, uid)
+			}
+			marshal, err := json.Marshal(message)
+			if err != nil {
+				return
+			}
+			request.GetConnection().SendMsg(201, marshal)
 		}
 	} else {
 		log.Println("change group type success ", "type:"+roomType)
