@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"websocket/config"
 	"websocket/lib/db"
@@ -15,10 +14,11 @@ import (
 
 // 创建链接之后执行的钩子函数
 func DoConnectionBegin(conn ziface.Iconnection) {
-	fmt.Println("====>DoConnection is Call")
+	// fmt.Println("====>DoConnection is Call")
 	if err := conn.SendMsg(202, []byte("DoConnection Beagin")); err != nil {
 		mylog.Error("Send message:" + err.Error())
 	}
+	log.Printf("【上线成功】ID:%d", conn.GetConnID())
 	//链接之前设置一些属性
 	//conn.SetProperty("name", "wancongmin")
 	//conn.SetProperty("home", "wuhan")
@@ -26,8 +26,9 @@ func DoConnectionBegin(conn ziface.Iconnection) {
 
 // 链接断开执行的钩子函数
 func DoConnectionLost(conn ziface.Iconnection) {
-	log.Println("====>DoConnectionLost is Call")
-	log.Println("====>conn ID =", conn.GetConnID())
+	//log.Println("====>DoConnectionLost is Call")
+	//log.Println("====>conn ID =", conn.GetConnID())
+	log.Printf("【下线成功】ID:%d", conn.GetConnID())
 	//获取链接属性
 	//if val, err := conn.GetProperty("name"); err == nil {
 	//	log.Println("name", val)

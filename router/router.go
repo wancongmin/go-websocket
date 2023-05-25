@@ -97,6 +97,7 @@ func (this *LocationRouter) Handle(request ziface.IRequest) {
 		Electricity: electricity,
 	}
 	model.SetUserLocation(user)
+	log.Printf("【上传定位】ID:%d,Longitude:%s,Latitude:%s", user.Id, user.Longitude, user.Latitude)
 }
 
 // Handle MsgId=102 切换频道
@@ -125,7 +126,6 @@ func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
 	if roomType == "2" || roomType == "3" {
 		if roomId, ok := msg.Data["roomId"]; ok {
 			request.GetConnection().SetProperty("roomId", roomId)
-			log.Println("change group type success ", "type:"+roomType, "roomId:"+roomId)
 			var message model.SendLocationMsg
 			message.MsgId = 201
 			message.Type = roomType
@@ -145,8 +145,9 @@ func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
 				return
 			}
 			request.GetConnection().SendMsg(201, marshal)
+			log.Printf("【切换频道】ID:%d,Type:%s,RoomId:%s", uid, roomType, roomId)
 		}
 	} else {
-		log.Println("change group type success ", "type:"+roomType)
+		log.Printf("【切换频道】ID:%d,Type:%s", uid, roomType)
 	}
 }

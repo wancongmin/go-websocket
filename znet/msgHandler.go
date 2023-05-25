@@ -79,7 +79,7 @@ func (m *MsgHandle) SendMsgToTaskQueue(request ziface.IRequest) {
 	//1 将消息平均分配给worker
 	// 根据客户端建立的ConnID来进行分配
 	workerID := request.GetConnection().GetConnID() % m.WorkerPoolSize
-	log.Println("Add ConnID=", request.GetConnection().GetConnID(), " request MsgID=", request.GetMsgId(), "to workerID", workerID)
+	//log.Println("Add ConnID=", request.GetConnection().GetConnID(), " request MsgID=", request.GetMsgId(), "to workerID", workerID)
 	//将消息发送给队友的worker的TaskQueue即可
 	m.TaskQueue[workerID] <- request
 	//

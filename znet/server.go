@@ -230,7 +230,7 @@ func (s *Server) SetConnStop(hookFunc func(connection ziface.Iconnection)) {
 // 调用OnConnStart 钩子函数的方法
 func (s *Server) CallConnStart(conn ziface.Iconnection) {
 	if s.OnConnStart != nil {
-		log.Println("--->Cal OnConnStart()...")
+		//log.Println("--->Cal OnConnStart()...")
 		s.OnConnStart(conn)
 	}
 }
@@ -238,7 +238,7 @@ func (s *Server) CallConnStart(conn ziface.Iconnection) {
 // 调用OnConnStop 钩子函数的方法
 func (s *Server) CallConnStop(conn ziface.Iconnection) {
 	if s.OnConnStop != nil {
-		log.Println("--->Cal OnConnStop()...")
+		//log.Println("--->Cal OnConnStop()...")
 		s.OnConnStop(conn)
 	}
 }
