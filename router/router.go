@@ -50,7 +50,7 @@ func (this *HolleRouter) Handle(request ziface.IRequest) {
 // Handle MsgId=100  心跳
 func (this *PingRouter) Handle(request ziface.IRequest) {
 	//先读取客户端数据再回写
-	log.Println("recv from client msgID=", request.GetMsgId(), ",data=", string(request.GetData()))
+	//log.Println("recv from client msgID=", request.GetMsgId(), ",data=", string(request.GetData()))
 	msg := model.SendStringMsg{
 		MsgId: 200,
 		Data:  "pong",
@@ -64,6 +64,7 @@ func (this *PingRouter) Handle(request ziface.IRequest) {
 	if err != nil {
 		mylog.Error("Send msg err:" + err.Error())
 	}
+	log.Printf("【心跳】ID:%d", request.GetConnection().GetConnID())
 }
 
 // Handle MsgId=101 上传定位

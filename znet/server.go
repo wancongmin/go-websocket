@@ -13,6 +13,7 @@ import (
 	"websocket/lib/mylog"
 	"websocket/model"
 	"websocket/utils"
+	"websocket/utils/token"
 	"websocket/ziface"
 )
 
@@ -72,17 +73,17 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		return
 	}
-	uid := req.Header.Get("uid")
-	if uid == "" {
-		uid = req.FormValue("uid")
+	tokenStr := req.Header.Get("token")
+	if tokenStr == "" {
+		tokenStr = req.FormValue("token")
 	}
-	parseInt, err := strconv.ParseInt(uid, 10, 64)
+	userToken, err := token.Get(tokenStr)
 	if err != nil {
-		mylog.Error("Get uid err:" + err.Error())
+		mylog.Error("token err:" + err.Error())
 		_ = conn.Close()
 		return
 	}
-	cid = uint32(parseInt)
+	cid = userToken.UserId
 	user := &model.User{}
 	db.Db.Table("fa_user").Where(model.User{Id: cid}).First(user)
 	if user.Id == 0 {

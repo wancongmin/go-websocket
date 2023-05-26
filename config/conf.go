@@ -36,3 +36,9 @@ type Redis struct {
 	Select   int
 	PoolSize int
 }
+
+type Token struct {
+	Type   string
+	Key    string
+	Expire int
+}
