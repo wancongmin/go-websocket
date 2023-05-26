@@ -35,6 +35,7 @@ type Connection struct {
 	property map[string]interface{}
 	//保护连接属性的锁
 	propertyLock sync.RWMutex
+	sendLock     sync.Mutex
 }
 
 //初始化链接模块的方法
@@ -123,6 +124,8 @@ func (c *Connection) StartWriter() {
 
 // 停止链接 结束当前的链接工作
 func (c *Connection) Stop() {
+	defer c.sendLock.Unlock()
+	c.sendLock.Lock()
 	//log.Println("Conn Stop()...ConnID=", c.ConnID)
 	//如果当前链接已经关闭
 	if c.isClose == true {
@@ -165,6 +168,8 @@ func (c *Connection) Send(data []byte) error {
 // 提供一个SendMsg方法 将我们要发送给客户端的数据，先进行封包，在发送
 func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	defer utils.CustomError()
+	defer c.sendLock.Unlock()
+	c.sendLock.Lock()
 	if c.isClose == true {
 		return errors.New("Connection close when send msg")
 	}
