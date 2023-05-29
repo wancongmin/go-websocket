@@ -26,7 +26,7 @@ type Server struct {
 	//服务器监听的ip
 	IP string
 	//Port
-	Port int
+	Port string
 	//当前的server添加一个router
 	//Router ziface.IRouter
 	//当前server的消息管理模块，用来绑定MsgID和对应的处理业务api关系
@@ -48,18 +48,12 @@ func (s *Server) Start() {
 		// 获取一个tcp Addr
 		//fmt.Println(s.IPversion,fmt.Sprintf("%s:%d",s.IP,s.Port))
 		//addr,err:=net.ResolveTCPAddr(s.IPversion,fmt.Sprintf("%s:%d",s.IP,s.Port))
-		var conf = &config.Conf{}
-		err := config.ConfFile.Section("conf").MapTo(conf)
-		if err != nil {
-			mylog.Error("获取配置参数不正确:" + err.Error())
-			return
-		}
 		http.HandleFunc("/", s.wsPage)
-		err = http.ListenAndServe(":"+conf.Port, nil)
+		err := http.ListenAndServe(":"+s.Port, nil)
 		if err != nil {
 			return
 		}
-		log.Println("Starting application success listen port:" + conf.Port)
+		log.Println("Starting application success listen port:" + s.Port)
 	}()
 }
 
@@ -207,11 +201,17 @@ func (s *Server) GetConnMgr() ziface.IConnManager {
 
 // 初始化Server模块方法
 func NewServer(name string) ziface.Iserver {
+	var conf = &config.Conf{}
+	err := config.ConfFile.Section("conf").MapTo(conf)
+	if err != nil {
+		mylog.Error("获取配置参数不正确:" + err.Error())
+		panic("获取配置参数不正确" + err.Error())
+	}
 	s := &Server{
 		Name:      name,
 		IPversion: "tcp4",
 		IP:        "0.0.0.0",
-		Port:      8091,
+		Port:      conf.Port,
 		MsgHandle: NewMsgHandle(),
 		ConnMgr:   NewConnMamager(),
 	}

@@ -30,7 +30,7 @@ func (c *ConnManager) Add(conn ziface.Iconnection) {
 	c.connLock.Lock()
 	defer c.connLock.Unlock()
 	c.Connections[conn.GetConnID()] = conn
-	log.Println("connID=", conn.GetConnID(), "connection add to connManager successfull;conn nun=", c.Len())
+	log.Printf("【上线信息】用户:%d,用户数:%d,总用户详情:%v", conn.GetConnID(), c.Len(), c.GetTotalConnections())
 }
 
 // 删除连接
@@ -39,7 +39,7 @@ func (c *ConnManager) Remove(conn ziface.Iconnection) {
 	c.connLock.Lock()
 	defer c.connLock.Unlock()
 	delete(c.Connections, conn.GetConnID())
-	log.Println("connID=", conn.GetConnID(), "connection delete to connManager successfull;conn nun=", c.Len())
+	log.Printf("【下线信息】用户:%d,用户数:%d,总用户详情:%v", conn.GetConnID(), c.Len(), c.GetTotalConnections())
 }
 
 // 根据connID获取连接
