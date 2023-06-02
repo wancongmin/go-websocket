@@ -50,7 +50,8 @@ func SetUserLocation(request User) {
 				return
 			}
 		}
-		user.Avatar = utils.CdnUrl(user.Avatar) + "?x-oss-process=image/resize,w_100,m_lfit"
+		//user.Avatar = utils.CdnUrl(user.Avatar) + "?x-oss-process=image/resize,w_100,m_lfit"
+		user.Avatar = utils.RoundThumb(user.Avatar, "100", "30")
 		marshal, err := json.Marshal(user)
 		if err != nil {
 			return
