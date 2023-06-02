@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"websocket/config"
 	"websocket/lib/db"
+	"websocket/lib/mylog"
 	"websocket/lib/redis"
 	"websocket/utils"
 )
@@ -65,7 +67,13 @@ func SetUserLocation(request User) {
 	if err != nil {
 		return
 	}
-	redis.Redis.Set(mpaKey, marshal, 600*time.Second)
+	var base = &config.Base{}
+	err = config.ConfFile.Section("base").MapTo(base)
+	if err != nil {
+		mylog.Error("获取配置参数不正确:" + err.Error())
+		return
+	}
+	redis.Redis.Set(mpaKey, marshal, base.MapLocationExpire*time.Second)
 }
 
 func GetUserLocation(userId uint32) User {

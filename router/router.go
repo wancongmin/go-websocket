@@ -26,10 +26,6 @@ type ChangeGroupRouter struct {
 }
 
 func (this *HolleRouter) Handle(request ziface.IRequest) {
-	log.Println("Call HolleRouter Handle..")
-	//先读取客户端数据再回写
-	log.Println("recv from client msgID=", request.GetMsgId(), ",data=", string(request.GetData()))
-	//err:=request.GetConnection().SendMsg(201,request.GetData())
 	m := model.ReceiveMsg{}
 	err := json.Unmarshal(request.GetData(), &m)
 	if err != nil {
@@ -40,6 +36,11 @@ func (this *HolleRouter) Handle(request ziface.IRequest) {
 		mylog.Error("Incorrect message parameters:" + err.Error())
 		return
 	}
+	//from_id, ok := m.Data["uid"]
+	//if !ok {
+	//	mylog.Error("发送参数不正确")
+	//}
+	//s.GetConnMgr().GetTotalConnections()
 	//err = znet.Managers.Connections[m.UserId].SendMsg(200, request.GetData())
 	//if err != nil {
 	//	mylog.Error("Send message:" + err.Error())

@@ -45,6 +45,7 @@ func main() {
 	redis.InitRedis()
 	//创建server句柄，使用zinx的api
 	s := znet.NewServer("funParty")
+	s.AddRouter(199, &router.PingRouter{})
 	s.AddRouter(100, &router.PingRouter{})
 	s.AddRouter(101, &router.LocationRouter{})
 	s.AddRouter(102, &router.ChangeGroupRouter{})

@@ -86,10 +86,9 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	ConnMgr := s.ConnMgr.GetTotalConnections()
-	if _, ok := ConnMgr[cid]; ok {
-		mylog.Error("当前id已存在，不可重复登录:" + fmt.Sprintf("%v", cid))
-		_ = conn.Close()
-		return
+	if oldConn, ok := ConnMgr[cid]; ok {
+		mylog.Error("当前id已存在，老连接下线:" + fmt.Sprintf("%v", cid))
+		oldConn.Stop()
 	}
 	//设置最大连接个数的判断，如果超过最大连接，那么关闭此新的连接
 	var conf = &config.Conf{}

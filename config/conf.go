@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/go-ini/ini"
 	"log"
+	"time"
 )
 
 var ConfFile *ini.File
@@ -41,4 +42,8 @@ type Token struct {
 	Type   string
 	Key    string
 	Expire int
+}
+
+type Base struct {
+	MapLocationExpire time.Duration
 }
