@@ -56,6 +56,8 @@ func (c *ConnManager) Get(connID uint32) (ziface.Iconnection, error) {
 
 // 得到当前链接总数
 func (c *ConnManager) Len() uint32 {
+	c.connLock.RLock()
+	defer c.connLock.RUnlock()
 	return uint32(len(c.Connections))
 }
 
@@ -75,5 +77,7 @@ func (c *ConnManager) ClearConn() {
 }
 
 func (c *ConnManager) GetTotalConnections() map[uint32]ziface.Iconnection {
+	c.connLock.RLock()
+	defer c.connLock.RUnlock()
 	return c.Connections
 }
