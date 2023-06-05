@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 	"websocket/config"
+	"websocket/core"
 	"websocket/lib/db"
 	"websocket/lib/mylog"
 	"websocket/model"
@@ -131,9 +132,9 @@ func (s *Server) Server() {
 // 发送定位消息给用户
 func (s *Server) LocationWork() {
 	for {
-		for _, conn := range s.GetConnMgr().GetTotalConnections() {
-			//for _, player := range core.WorldMgrObj.GetAllPlayers() {
-			//conn := player.Conn
+		//for _, conn := range s.GetConnMgr().GetTotalConnections() {
+		for _, player := range core.WorldMgrObj.GetAllPlayers() {
+			conn := player.Conn
 			typeVal, err := conn.GetProperty("type")
 			if err != nil {
 				continue

@@ -20,10 +20,10 @@ func DoConnectionBegin(conn ziface.Iconnection) {
 		mylog.Error("Send message:" + err.Error())
 	}
 	//创建一个玩家
-	//player := core.NewPlayer(conn)
-	////将当前新上线玩家添加到worldManager中
-	//core.WorldMgrObj.AddPlayer(player)
-	log.Printf("【上线成功】ID:%d,plays:%v", conn.GetConnID(), core.WorldMgrObj.GetAllPlayers())
+	player := core.NewPlayer(conn)
+	//将当前新上线玩家添加到worldManager中
+	core.WorldMgrObj.AddPlayer(player)
+	log.Printf("【上线成功】ID:%d,plays:%v", conn.GetConnID(), core.WorldMgrObj.GetAllPlayerIds())
 	//链接之前设置一些属性
 	//conn.SetProperty("name", "")
 	//conn.SetProperty("home", "")
@@ -35,13 +35,13 @@ func DoConnectionLost(conn ziface.Iconnection) {
 	//log.Println("====>conn ID =", conn.GetConnID())
 
 	//根据pID获取对应的玩家对象
-	//player := core.WorldMgrObj.GetPlayerByPID(conn.GetConnID())
-	//
-	////触发玩家下线业务
-	//if player != nil {
-	//	player.LostConnection()
-	//}
-	log.Printf("【下线成功】ID:%d，plays:%v", conn.GetConnID(), core.WorldMgrObj.GetAllPlayers())
+	player := core.WorldMgrObj.GetPlayerByPID(conn.GetConnID())
+
+	//触发玩家下线业务
+	if player != nil {
+		player.LostConnection()
+	}
+	log.Printf("【下线成功】ID:%d，plays:%v", conn.GetConnID(), core.WorldMgrObj.GetAllPlayerIds())
 	//获取链接属性
 	//if val, err := conn.GetProperty("name"); err == nil {
 	//	log.Println("name", val)
