@@ -36,7 +36,6 @@ func (this *HolleRouter) Handle(request ziface.IRequest) {
 		mylog.Error("Incorrect message parameters:" + err.Error())
 		return
 	}
-	request.GetConnection().GetTCPConnection().PongHandler()
 	//from_id, ok := m.Data["uid"]
 	//if !ok {
 	//	mylog.Error("发送参数不正确")

@@ -57,14 +57,13 @@ func (s *Server) Start() {
 	}()
 }
 
-var cid uint32
-
 func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	defer utils.CustomError()
 	var conn *websocket.Conn
 	//如果有客户端连接过来，阻塞会返回
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
 	if err != nil {
+		mylog.Error("conn err:" + err.Error())
 		return
 	}
 	tokenStr := req.Header.Get("token")
@@ -77,7 +76,7 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		_ = conn.Close()
 		return
 	}
-	cid = userToken.UserId
+	cid := userToken.UserId
 	user := &model.User{}
 	db.Db.Table("fa_user").Where(model.User{Id: cid}).First(user)
 	if user.Id == 0 {
@@ -111,7 +110,6 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	dealConn := NewConnetion(s, conn, cid, s.MsgHandle)
-	cid++
 	go dealConn.Start()
 }
 
@@ -134,6 +132,8 @@ func (s *Server) Server() {
 func (s *Server) LocationWork() {
 	for {
 		for _, conn := range s.GetConnMgr().GetTotalConnections() {
+			//for _, player := range core.WorldMgrObj.GetAllPlayers() {
+			//conn := player.Conn
 			typeVal, err := conn.GetProperty("type")
 			if err != nil {
 				continue
@@ -180,9 +180,10 @@ func (s *Server) LocationWork() {
 			if err != nil {
 				continue
 			}
-			if conn, ok := s.GetConnMgr().GetTotalConnections()[userId]; ok {
-				conn.SendMsg(201, marshal)
-			}
+			//if conn, ok := s.GetConnMgr().GetTotalConnections()[userId]; ok {
+			//	conn.SendMsg(201, marshal)
+			//}
+			conn.SendMsg(201, marshal)
 		}
 		time.Sleep(3 * time.Second)
 	}
