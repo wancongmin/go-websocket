@@ -1,12 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"time"
 	"websocket/config"
 	"websocket/core"
 	"websocket/lib/db"
 	"websocket/lib/mylog"
 	"websocket/lib/redis"
+	"websocket/model"
 	"websocket/router"
 	"websocket/utils"
 	"websocket/ziface"
@@ -51,21 +54,59 @@ func DoConnectionLost(conn ziface.Iconnection) {
 	//}
 }
 
+// User-defined heartbeat message processing method
+// 用户自定义的心跳检测消息处理方法
+func myHeartBeatMsg(conn ziface.Iconnection) []byte {
+	msg := model.SendStringMsg{
+		MsgId: 200,
+		Data:  "pong",
+	}
+	marshal, err := json.Marshal(msg)
+	if err != nil {
+		mylog.Error("Marshal msg err:" + err.Error())
+		return []byte("")
+	}
+	return marshal
+}
+
+// User-defined handling method for remote connection not alive.
+// 用户自定义的远程连接不存活时的处理方法
+func myOnRemoteNotAlive(conn ziface.Iconnection) {
+	//关闭链接
+	conn.Stop()
+}
+
+type myHeartBeatRouter struct {
+	znet.BaseRouter
+}
+
+func (r *myHeartBeatRouter) Handle(request ziface.IRequest) {
+	log.Printf("【心跳】ID:%d", request.GetMsgId())
+}
+
 func main() {
 	defer utils.CustomError()
 	config.InitConf()
 	db.InitDb()
 	redis.InitRedis()
+	utils.InitGlobalConf()
 	//创建server句柄，使用zinx的api
 	s := znet.NewServer("funParty")
-	s.AddRouter(199, &router.PingRouter{})
-	s.AddRouter(100, &router.PingRouter{})
+	//s.AddRouter(100, &router.PingRouter{})
 	s.AddRouter(101, &router.LocationRouter{})
 	s.AddRouter(102, &router.ChangeGroupRouter{})
 
 	//注册连接的Hook钩子函数
 	s.SetConnStart(DoConnectionBegin)
 	s.SetConnStop(DoConnectionLost)
+
+	// Start heartbeating detection. (启动心跳检测)
+	s.StartHeartBeatWithOption(3*time.Second, &ziface.HeartBeatOption{
+		MakeMsg:          myHeartBeatMsg,
+		OnRemoteNotAlive: myOnRemoteNotAlive,
+		Router:           &myHeartBeatRouter{},
+		HeadBeatMsgID:    uint32(100),
+	})
 	//启动Server
 	s.Server()
 }

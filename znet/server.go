@@ -38,6 +38,9 @@ type Server struct {
 	OnConnStart func(conn ziface.Iconnection)
 	//该Server销毁连接只求自动调用Hook函数 OnConnStop
 	OnConnStop func(conn ziface.Iconnection)
+	// Heartbeat checker
+	// (心跳检测器)
+	hc ziface.IHeartbeatChecker
 }
 
 // 启动服务器
@@ -61,6 +64,7 @@ func (s *Server) Start() {
 func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	defer utils.CustomError()
 	var conn *websocket.Conn
+	//defer conn.Close()
 	//如果有客户端连接过来，阻塞会返回
 	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
 	if err != nil {
@@ -111,7 +115,15 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	dealConn := NewConnetion(s, conn, cid, s.MsgHandle)
+	// HeartBeat check
+	if s.hc != nil {
+		// Clone a heart-beat checker from the server side
+		heartBeatChecker := s.hc.Clone()
+		// Bind current connection
+		heartBeatChecker.BindConn(dealConn)
+	}
 	go dealConn.Start()
+
 }
 
 func (s *Server) Stop() {
@@ -243,4 +255,24 @@ func (s *Server) CallConnStop(conn ziface.Iconnection) {
 		//log.Println("--->Cal OnConnStop()...")
 		s.OnConnStop(conn)
 	}
+}
+
+// 启动心跳检测
+// (option 心跳检测的配置)
+func (s *Server) StartHeartBeatWithOption(interval time.Duration, option *ziface.HeartBeatOption) {
+	checker := NewHeartbeatChecker(interval)
+	// Configure the heartbeat checker with the provided options
+	if option != nil {
+		checker.SetHeartbeatMsgFunc(option.MakeMsg)
+		checker.SetOnRemoteNotAlive(option.OnRemoteNotAlive)
+		checker.BindRouter(option.HeadBeatMsgID, option.Router)
+	}
+	// Add the heartbeat checker's router to the server's router (添加心跳检测的路由)
+	s.AddRouter(checker.MsgID(), checker.Router())
+	// Bind the server with the heartbeat checker (server绑定心跳检测器)
+	s.hc = checker
+}
+
+func (s *Server) GetHeartBeat() ziface.IHeartbeatChecker {
+	return s.hc
 }

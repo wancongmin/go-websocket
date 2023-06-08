@@ -46,4 +46,5 @@ type Token struct {
 
 type Base struct {
 	MapLocationExpire time.Duration
+	HeartbeatMax      time.Duration
 }

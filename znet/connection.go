@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 	"websocket/lib/mylog"
 	"websocket/model"
 	"websocket/utils"
@@ -35,7 +36,14 @@ type Connection struct {
 	property map[string]interface{}
 	//保护连接属性的锁
 	propertyLock sync.RWMutex
-	sendLock     sync.Mutex
+	//发消息锁
+	sendLock sync.Mutex
+	// (最后一次活动时间)
+	lastActivityTime time.Time
+
+	// Heartbeat checker
+	// (心跳检测器)
+	hc ziface.IHeartbeatChecker
 }
 
 //初始化链接模块的方法
@@ -61,11 +69,15 @@ func (c *Connection) StartReader() {
 	defer utils.CustomError()
 	defer c.Stop()
 	for {
-		_, data, err := c.Conn.ReadMessage()
+		n, data, err := c.Conn.ReadMessage()
 		if err != nil {
 			// mylog.Error("read msg error:" + err.Error())
 			c.Conn.Close()
 			return
+		}
+		// (正常读取到对端数据，更新心跳检测Active状态)
+		if n > 0 && c.hc != nil {
+			c.updateActivity()
 		}
 		m := model.ReceiveMsg{}
 		err = json.Unmarshal(data, &m)
@@ -92,6 +104,11 @@ func (c *Connection) StartReader() {
 
 func (c *Connection) Start() {
 	//fmt.Println("Connet Start()...ConnID=", c.ConnID)
+	// Start heartbeating detection
+	if c.hc != nil {
+		c.hc.Start()
+		c.updateActivity()
+	}
 	//启动当前链接的读数据的业务
 	go c.StartReader()
 	//TODO 启动从当前链接写数据的业务
@@ -99,6 +116,7 @@ func (c *Connection) Start() {
 
 	//按照开发者传递进来的创建连接之后需要调用的处理业务，执行对应的Hook函数
 	c.TcpSever.CallConnStart(c)
+
 }
 
 // 写消息的Goroutime
@@ -126,17 +144,21 @@ func (c *Connection) StartWriter() {
 func (c *Connection) Stop() {
 	defer c.sendLock.Unlock()
 	c.sendLock.Lock()
-	//log.Println("Conn Stop()...ConnID=", c.ConnID)
 	//如果当前链接已经关闭
 	if c.isClose == true {
 		return
 	}
 	c.isClose = true
-
+	if c.hc != nil {
+		c.hc.Stop()
+	}
 	//调用开发者注册的 销毁连接只求，执行对应的Hook函数
 	c.TcpSever.CallConnStop(c)
 	//关闭socket链接
-	c.Conn.Close()
+	err := c.Conn.Close()
+	if err != nil {
+		log.Println("【Conn Close err:】", err)
+	}
 	c.ExitChan <- true
 	//将当前连接从ConnMgr中删除
 	c.TcpSever.GetConnMgr().Remove(c)
@@ -158,6 +180,9 @@ func (c *Connection) GetConnID() uint32 {
 // 获取远程客户端的TCP  状态 IP port
 func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
+}
+func (c *Connection) LocalAddr() net.Addr {
+	return c.Conn.LocalAddr()
 }
 
 // 发送数据，将数据发送给远程客户端
@@ -219,4 +244,24 @@ func (c *Connection) RemoveProperty(key string) {
 	c.propertyLock.Lock()
 	defer c.propertyLock.Unlock()
 	delete(c.property, key)
+}
+
+func (c *Connection) IsAlive() bool {
+	if c.isClose {
+		return false
+	}
+	// (检查连接最后一次活动时间，如果超过心跳间隔，则认为连接已经死亡)
+	return time.Now().Sub(c.lastActivityTime) < utils.GlobalObject.HeartbeatMax*time.Second
+}
+
+func (c *Connection) updateActivity() {
+	c.lastActivityTime = time.Now()
+}
+
+func (c *Connection) SetHeartBeat(checker ziface.IHeartbeatChecker) {
+	c.hc = checker
+}
+
+func (c *Connection) GetActivityTime() time.Time {
+	return c.lastActivityTime
 }

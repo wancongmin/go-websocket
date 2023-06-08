@@ -44,11 +44,13 @@ func SetUserLocation(request User) {
 		}
 		if user.GhostType == 1 {
 			redis.Redis.Del(mpaKey)
+			redis.Redis.Del(userKey)
 			return
 		}
 		if user.GhostType == 2 || user.GhostType == 3 {
 			if user.GhostTime > int(time.Now().Unix()) {
 				redis.Redis.Del(mpaKey)
+				redis.Redis.Del(userKey)
 				return
 			}
 		}

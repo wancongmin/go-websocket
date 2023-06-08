@@ -1,12 +1,25 @@
 package utils
 
-import "websocket/ziface"
+import (
+	"time"
+	"websocket/config"
+	"websocket/lib/mylog"
+)
 
-type GlobalObj struct {
-	//server
-	TcpServer ziface.Iserver //当前全局Server对象
-	Host      string
-	TcpPost   int
-	Name      string
-	//zinx
+type GlobalConf struct {
+	HeartbeatMax time.Duration
+}
+
+var GlobalObject *GlobalConf
+
+func InitGlobalConf() {
+	var conf = &config.Base{}
+	err := config.ConfFile.Section("base").MapTo(conf)
+	if err != nil {
+		mylog.Error("获取配置参数不正确:" + err.Error())
+		panic("获取配置参数不正确" + err.Error())
+	}
+	GlobalObject = &GlobalConf{
+		HeartbeatMax: conf.HeartbeatMax,
+	}
 }

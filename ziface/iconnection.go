@@ -3,6 +3,7 @@ package ziface
 import (
 	"github.com/gorilla/websocket"
 	"net"
+	"time"
 )
 
 type Iconnection interface {
@@ -16,6 +17,7 @@ type Iconnection interface {
 	GetConnID() uint32
 	//获取远程客户端的TCP  状态 IP port
 	RemoteAddr() net.Addr
+	LocalAddr() net.Addr
 	//发送数据，将数据发送给远程客户端
 	SendMsg(msgId uint32, data []byte) error
 	//设置链接属性
@@ -24,6 +26,10 @@ type Iconnection interface {
 	GetProperty(key string) (interface{}, error)
 	//移除链接属性
 	RemoveProperty(key string)
+	//检测是否活跃
+	IsAlive() bool
+	SetHeartBeat(checker IHeartbeatChecker) // Set the heartbeat detector (设置心跳检测器)
+	GetActivityTime() time.Time             // 获取最后活跃时间
 }
 
 //定义一个处理链接业务的方法
