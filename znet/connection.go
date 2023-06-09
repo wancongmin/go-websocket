@@ -155,10 +155,7 @@ func (c *Connection) Stop() {
 	//调用开发者注册的 销毁连接只求，执行对应的Hook函数
 	c.TcpSever.CallConnStop(c)
 	//关闭socket链接
-	err := c.Conn.Close()
-	if err != nil {
-		log.Println("【Conn Close err:】", err)
-	}
+	_ = c.Conn.Close()
 	c.ExitChan <- true
 	//将当前连接从ConnMgr中删除
 	c.TcpSever.GetConnMgr().Remove(c)
