@@ -81,7 +81,7 @@ type myHeartBeatRouter struct {
 }
 
 func (r *myHeartBeatRouter) Handle(request ziface.IRequest) {
-	log.Printf("【心跳】ID:%d", request.GetMsgId())
+	log.Printf("【心跳】ID:%d", request.GetConnection().GetConnID())
 }
 
 func main() {
