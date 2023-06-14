@@ -1,4 +1,4 @@
-package ziface
+package impl
 
 import "time"
 

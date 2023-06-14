@@ -4,28 +4,28 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"websocket/impl"
 	"websocket/lib/mylog"
 	"websocket/model"
-	"websocket/ziface"
-	"websocket/znet"
+	"websocket/service"
 )
 
 type HolleRouter struct {
-	znet.BaseRouter
+	service.BaseRouter
 }
 
 // ping test 自定义路由
 type PingRouter struct {
-	znet.BaseRouter
+	service.BaseRouter
 }
 type LocationRouter struct {
-	znet.BaseRouter
+	service.BaseRouter
 }
 type ChangeGroupRouter struct {
-	znet.BaseRouter
+	service.BaseRouter
 }
 
-func (this *HolleRouter) Handle(request ziface.IRequest) {
+func (this *HolleRouter) Handle(request impl.IRequest) {
 	m := model.ReceiveMsg{}
 	err := json.Unmarshal(request.GetData(), &m)
 	if err != nil {
@@ -41,7 +41,7 @@ func (this *HolleRouter) Handle(request ziface.IRequest) {
 	//	mylog.Error("发送参数不正确")
 	//}
 	//s.GetConnMgr().GetTotalConnections()
-	//err = znet.Managers.Connections[m.UserId].SendMsg(200, request.GetData())
+	//err = service.Managers.Connections[m.UserId].SendMsg(200, request.GetData())
 	//if err != nil {
 	//	mylog.Error("Send message:" + err.Error())
 	//	return
@@ -49,7 +49,7 @@ func (this *HolleRouter) Handle(request ziface.IRequest) {
 }
 
 // Handle MsgId=100  心跳
-func (this *PingRouter) Handle(request ziface.IRequest) {
+func (this *PingRouter) Handle(request impl.IRequest) {
 	//先读取客户端数据再回写
 	//log.Println("recv from client msgID=", request.GetMsgId(), ",data=", string(request.GetData()))
 	msg := model.SendStringMsg{
@@ -69,7 +69,7 @@ func (this *PingRouter) Handle(request ziface.IRequest) {
 }
 
 // Handle MsgId=101 上传定位
-func (this *LocationRouter) Handle(request ziface.IRequest) {
+func (this *LocationRouter) Handle(request impl.IRequest) {
 	// 获取定位信息并存入redis
 	uid := request.GetConnection().GetConnID()
 	if uid == 0 {
@@ -103,7 +103,7 @@ func (this *LocationRouter) Handle(request ziface.IRequest) {
 }
 
 // Handle MsgId=102 切换频道
-func (this *ChangeGroupRouter) Handle(request ziface.IRequest) {
+func (this *ChangeGroupRouter) Handle(request impl.IRequest) {
 	// 获取定位信息并存入redis
 	uid := request.GetConnection().GetConnID()
 	if uid == 0 {

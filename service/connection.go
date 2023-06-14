@@ -1,4 +1,4 @@
-package znet
+package service
 
 import (
 	"encoding/json"
@@ -8,16 +8,16 @@ import (
 	"net"
 	"sync"
 	"time"
+	"websocket/impl"
 	"websocket/lib/mylog"
 	"websocket/model"
 	"websocket/utils"
-	"websocket/ziface"
 )
 
 // 链接模块
 type Connection struct {
 	//当前Conn属于哪个sever
-	TcpSever ziface.Iserver
+	TcpSever impl.Iserver
 	//当前链接的socket TCP 套接字
 	Conn *websocket.Conn
 	//链接ID
@@ -25,13 +25,13 @@ type Connection struct {
 	//当前链接状态
 	isClose bool
 	//当前链接所绑定的处理业务方法API
-	//handleAPI ziface.HandleFunc
+	//handleAPI impl.HandleFunc
 	//高中当前链接已经退出的/停止的channel
 	ExitChan chan bool
 	//无缓冲管道，用于读写Goroutime之前的消息通行
 	smgChan chan []byte
 	//消息的管理MsgID 和对应的处理业务API
-	MsgHandler ziface.IMsgHandle
+	MsgHandler impl.IMsgHandle
 	//链接属性的集合
 	property map[string]interface{}
 	//保护连接属性的锁
@@ -43,12 +43,12 @@ type Connection struct {
 
 	// Heartbeat checker
 	// (心跳检测器)
-	hc ziface.IHeartbeatChecker
+	hc impl.IHeartbeatChecker
 }
 
 //初始化链接模块的方法
 
-func NewConnetion(sever ziface.Iserver, conn *websocket.Conn, connID uint32, msgHandler ziface.IMsgHandle) *Connection {
+func NewConnetion(sever impl.Iserver, conn *websocket.Conn, connID uint32, msgHandler impl.IMsgHandle) *Connection {
 	c := &Connection{
 		TcpSever:   sever,
 		Conn:       conn,
@@ -255,7 +255,7 @@ func (c *Connection) updateActivity() {
 	c.lastActivityTime = time.Now()
 }
 
-func (c *Connection) SetHeartBeat(checker ziface.IHeartbeatChecker) {
+func (c *Connection) SetHeartBeat(checker impl.IHeartbeatChecker) {
 	c.hc = checker
 }
 

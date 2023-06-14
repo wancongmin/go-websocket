@@ -1,4 +1,4 @@
-package znet
+package service
 
 import (
 	"encoding/json"
@@ -10,12 +10,12 @@ import (
 	"time"
 	"websocket/config"
 	"websocket/core"
+	"websocket/impl"
 	"websocket/lib/db"
 	"websocket/lib/mylog"
 	"websocket/model"
 	"websocket/utils"
 	"websocket/utils/token"
-	"websocket/ziface"
 )
 
 // iserver的接口实现，定义一个server的服务器模块
@@ -29,18 +29,18 @@ type Server struct {
 	//Port
 	Port string
 	//当前的server添加一个router
-	//Router ziface.IRouter
+	//Router impl.IRouter
 	//当前server的消息管理模块，用来绑定MsgID和对应的处理业务api关系
-	MsgHandle ziface.IMsgHandle
+	MsgHandle impl.IMsgHandle
 	//该server的连接管理器
-	ConnMgr ziface.IConnManager
+	ConnMgr impl.IConnManager
 	//该Server创建连接之后自动调用Hook函数OnConnStart
-	OnConnStart func(conn ziface.Iconnection)
+	OnConnStart func(conn impl.Iconnection)
 	//该Server销毁连接只求自动调用Hook函数 OnConnStop
-	OnConnStop func(conn ziface.Iconnection)
+	OnConnStop func(conn impl.Iconnection)
 	// Heartbeat checker
 	// (心跳检测器)
-	hc ziface.IHeartbeatChecker
+	hc impl.IHeartbeatChecker
 }
 
 // 启动服务器
@@ -203,17 +203,17 @@ func (s *Server) LocationWork() {
 }
 
 // 路由功能，给当前的服务注册一个路由方法，提供客户端的链接处理使用
-func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
+func (s *Server) AddRouter(msgID uint32, router impl.IRouter) {
 	s.MsgHandle.AddRouter(msgID, router)
 	fmt.Println("Add Router Success!")
 }
 
-func (s *Server) GetConnMgr() ziface.IConnManager {
+func (s *Server) GetConnMgr() impl.IConnManager {
 	return s.ConnMgr
 }
 
 // 初始化Server模块方法
-func NewServer(name string) ziface.Iserver {
+func NewServer(name string) impl.Iserver {
 	var conf = &config.Conf{}
 	err := config.ConfFile.Section("conf").MapTo(conf)
 	if err != nil {
@@ -232,17 +232,17 @@ func NewServer(name string) ziface.Iserver {
 }
 
 // 注册OnConnStart 钩子函数的方法
-func (s *Server) SetConnStart(hookFunc func(connection ziface.Iconnection)) {
+func (s *Server) SetConnStart(hookFunc func(connection impl.Iconnection)) {
 	s.OnConnStart = hookFunc
 }
 
 // 注册OnConnStop 钩子函数的方法
-func (s *Server) SetConnStop(hookFunc func(connection ziface.Iconnection)) {
+func (s *Server) SetConnStop(hookFunc func(connection impl.Iconnection)) {
 	s.OnConnStop = hookFunc
 }
 
 // 调用OnConnStart 钩子函数的方法
-func (s *Server) CallConnStart(conn ziface.Iconnection) {
+func (s *Server) CallConnStart(conn impl.Iconnection) {
 	if s.OnConnStart != nil {
 		//log.Println("--->Cal OnConnStart()...")
 		s.OnConnStart(conn)
@@ -250,7 +250,7 @@ func (s *Server) CallConnStart(conn ziface.Iconnection) {
 }
 
 // 调用OnConnStop 钩子函数的方法
-func (s *Server) CallConnStop(conn ziface.Iconnection) {
+func (s *Server) CallConnStop(conn impl.Iconnection) {
 	if s.OnConnStop != nil {
 		//log.Println("--->Cal OnConnStop()...")
 		s.OnConnStop(conn)
@@ -259,7 +259,7 @@ func (s *Server) CallConnStop(conn ziface.Iconnection) {
 
 // 启动心跳检测
 // (option 心跳检测的配置)
-func (s *Server) StartHeartBeatWithOption(interval time.Duration, option *ziface.HeartBeatOption) {
+func (s *Server) StartHeartBeatWithOption(interval time.Duration, option *impl.HeartBeatOption) {
 	checker := NewHeartbeatChecker(interval)
 	// Configure the heartbeat checker with the provided options
 	if option != nil {
@@ -273,6 +273,6 @@ func (s *Server) StartHeartBeatWithOption(interval time.Duration, option *ziface
 	s.hc = checker
 }
 
-func (s *Server) GetHeartBeat() ziface.IHeartbeatChecker {
+func (s *Server) GetHeartBeat() impl.IHeartbeatChecker {
 	return s.hc
 }

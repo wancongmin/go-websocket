@@ -1,4 +1,4 @@
-package ziface
+package impl
 
 // 连接管理模块抽象层
 type IConnManager interface {

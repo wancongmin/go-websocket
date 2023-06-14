@@ -1,4 +1,4 @@
-package ziface
+package impl
 
 /*
 实际是吧客户请求的链接信息，和请求的数据包装到了一个Request中

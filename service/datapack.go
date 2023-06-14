@@ -1,10 +1,10 @@
-package znet
+package service
 
 import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"websocket/ziface"
+	"websocket/impl"
 )
 
 type DataPack struct{}
@@ -13,14 +13,14 @@ func NewDataPack() *DataPack {
 	return &DataPack{}
 }
 
-//获取包的头的长度方法
+// 获取包的头的长度方法
 func (dp *DataPack) GetHeadLen() uint32 {
 	//Datalen uint32(4字节)+ID uint32(4字节)
 	return 8
 }
 
-//封包方法
-func (dp *DataPack) Pack(msg ziface.IMessage) ([]byte, error) {
+// 封包方法
+func (dp *DataPack) Pack(msg impl.IMessage) ([]byte, error) {
 	//创建一个存放bytes字节的缓冲
 	dataBuff := bytes.NewBuffer([]byte{})
 	//将dataLen写进databuff中
@@ -38,8 +38,8 @@ func (dp *DataPack) Pack(msg ziface.IMessage) ([]byte, error) {
 	return dataBuff.Bytes(), nil
 }
 
-//拆包方法
-func (dp *DataPack) Unpack(binaryData []byte) (ziface.IMessage, error) {
+// 拆包方法
+func (dp *DataPack) Unpack(binaryData []byte) (impl.IMessage, error) {
 	//创建一个从二进制数据的ioReader
 	dataBuff := bytes.NewReader(binaryData)
 	//只解压head信息，得到datalen和MsgID

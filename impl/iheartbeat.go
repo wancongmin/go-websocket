@@ -1,4 +1,4 @@
-package ziface
+package impl
 
 type IHeartbeatChecker interface {
 	SetOnRemoteNotAlive(OnRemoteNotAlive)
