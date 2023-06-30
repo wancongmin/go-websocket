@@ -22,6 +22,7 @@ type User struct {
 	Electricity string
 	GhostType   int `gorm:"ghost_type"`
 	GhostTime   int `gorm:"ghost_time"`
+	ChooseType  int `gorm:"-"`
 }
 
 func SetUserLocation(request User) {
@@ -55,7 +56,7 @@ func SetUserLocation(request User) {
 			}
 		}
 		//user.Avatar = utils.CdnUrl(user.Avatar) + "?x-oss-process=image/resize,w_100,m_lfit"
-		user.Avatar = utils.RoundThumb(user.Avatar, "100", "30")
+		user.Avatar = utils.RoundThumb(user.Avatar, "100", "0")
 		marshal, err := json.Marshal(user)
 		if err != nil {
 			return
@@ -91,4 +92,19 @@ func GetUserLocation(userId uint32) User {
 		}
 	}
 	return user
+}
+
+// user 缓存
+func SetUserInfo(user User) {
+	key := "mapUserInfo:uid_" + fmt.Sprintf("%v", user.Id)
+	result, err := redis.Redis.Get(key).Result()
+	if err != nil {
+		return
+	}
+	var resUser User
+	err = json.Unmarshal([]byte(result), &resUser)
+	if err != nil {
+		return
+	}
+
 }

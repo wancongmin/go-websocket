@@ -40,6 +40,10 @@ func Thumb(url, w string) string {
 // 圆角缩略图
 func RoundThumb(url, w, r string) string {
 	url = CdnUrl(url)
-	url = url + "?x-oss-process=image/resize,w_" + w + ",m_lfit/rounded-corners,r_" + r
+	if r != "0" {
+		url = url + "?x-oss-process=image/resize,w_" + w + ",m_lfit/rounded-corners,r_" + r
+	} else {
+		url = url + "?x-oss-process=image/resize,w_" + w + ",m_lfit"
+	}
 	return url
 }
