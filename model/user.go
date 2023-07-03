@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"websocket/config"
+	"websocket/impl"
 	"websocket/lib/db"
 	"websocket/lib/mylog"
 	"websocket/lib/redis"
@@ -23,6 +24,10 @@ type User struct {
 	GhostType   int `gorm:"ghost_type"`
 	GhostTime   int `gorm:"ghost_time"`
 	ChooseType  int `gorm:"-"`
+}
+type UserType struct {
+	Type   string
+	RoomId string
 }
 
 func SetUserLocation(request User) {
@@ -106,5 +111,34 @@ func SetUserInfo(user User) {
 	if err != nil {
 		return
 	}
+}
 
+// userType 缓存
+func SetUserType(request impl.IRequest, userType UserType) {
+	uid := request.GetConnection().GetConnID()
+	request.GetConnection().SetProperty("type", userType.Type)
+	if userType.RoomId != "" {
+		request.GetConnection().SetProperty("roomId", userType.RoomId)
+	}
+	key := "UserType:uid_" + fmt.Sprintf("%v", uid)
+	marshal, err := json.Marshal(userType)
+	if err != nil {
+		return
+	}
+	redis.Redis.Set(key, marshal, 600*time.Second)
+}
+
+func GetUserType(uid uint32) UserType {
+	key := "UserType:uid_" + fmt.Sprintf("%v", uid)
+	userType := UserType{}
+	result, err := redis.Redis.Get(key).Result()
+	if err != nil {
+		return userType
+	} else {
+		err := json.Unmarshal([]byte(result), &userType)
+		if err != nil {
+			return userType
+		}
+	}
+	return userType
 }

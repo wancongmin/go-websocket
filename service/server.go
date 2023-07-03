@@ -115,6 +115,11 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	dealConn := NewConnetion(s, conn, cid, s.MsgHandle)
+
+	//用户属性
+	userType := model.GetUserType(cid)
+	dealConn.SetProperty("type", userType.Type)
+	dealConn.SetProperty("roomId", userType.RoomId)
 	// HeartBeat check
 	if s.hc != nil {
 		// Clone a heart-beat checker from the server side

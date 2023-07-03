@@ -124,14 +124,18 @@ func (this *ChangeGroupRouter) Handle(request impl.IRequest) {
 		// roomType值错误
 		return
 	}
-	request.GetConnection().SetProperty("type", roomType)
+	var userType model.UserType
+	userType.Type = roomType
+	//request.GetConnection().SetProperty("type", roomType)
+	var message model.SendLocationMsg
+	message.MsgId = 201
+	message.Type = roomType
+	message.UserId = uid
 	if roomType == "2" || roomType == "3" {
 		if roomId, ok := msg.Data["roomId"]; ok {
-			request.GetConnection().SetProperty("roomId", roomId)
-			var message model.SendLocationMsg
-			message.MsgId = 201
-			message.Type = roomType
-			message.UserId = uid
+			//request.GetConnection().SetProperty("roomId", roomId)
+			userType.RoomId = roomId
+			model.SetUserType(request, userType)
 			intRoomId, err := strconv.Atoi(roomId)
 			if err != nil {
 				return
@@ -150,6 +154,15 @@ func (this *ChangeGroupRouter) Handle(request impl.IRequest) {
 			log.Printf("【切换频道】ID:%d,Type:%s,RoomId:%s", uid, roomType, roomId)
 		}
 	} else {
+		if roomType == "1" {
+			message.Users = model.GetFriendLocation(uid)
+			marshal, err := json.Marshal(message)
+			if err != nil {
+				return
+			}
+			request.GetConnection().SendMsg(201, marshal)
+		}
+		model.SetUserType(request, userType)
 		log.Printf("【切换频道】ID:%d,Type:%s", uid, roomType)
 	}
 }
