@@ -33,8 +33,10 @@ type UserType struct {
 func SetUserLocation(request User) {
 	userKey := "quparty_user:uid_" + fmt.Sprintf("%v", request.Id)
 	mpaKey := "mapLocation:uid_" + fmt.Sprintf("%v", request.Id)
+	tempMpaKey := "tempMapLocation:uid_" + fmt.Sprintf("%v", request.Id)
 	result, err := redis.Redis.Get(userKey).Result()
 	var user User
+	isGhost := false
 	if err == nil {
 		err := json.Unmarshal([]byte(result), &user)
 		if err != nil {
@@ -48,16 +50,15 @@ func SetUserLocation(request User) {
 		if user.Id == 0 {
 			return
 		}
+		// 处理幽灵模式
 		if user.GhostType == 1 {
 			redis.Redis.Del(mpaKey)
-			redis.Redis.Del(userKey)
-			return
+			isGhost = true
 		}
 		if user.GhostType == 2 || user.GhostType == 3 {
 			if user.GhostTime > int(time.Now().Unix()) {
 				redis.Redis.Del(mpaKey)
-				redis.Redis.Del(userKey)
-				return
+				isGhost = true
 			}
 		}
 		//user.Avatar = utils.CdnUrl(user.Avatar) + "?x-oss-process=image/resize,w_100,m_lfit"
@@ -81,7 +82,10 @@ func SetUserLocation(request User) {
 		mylog.Error("获取配置参数不正确:" + err.Error())
 		return
 	}
-	redis.Redis.Set(mpaKey, marshal, base.MapLocationExpire*time.Second)
+	if !isGhost {
+		redis.Redis.Set(mpaKey, marshal, base.MapLocationExpire*time.Second)
+	}
+	redis.Redis.Set(tempMpaKey, marshal, 60*time.Second)
 }
 
 func GetUserLocation(userId uint32) User {
@@ -99,18 +103,19 @@ func GetUserLocation(userId uint32) User {
 	return user
 }
 
-// user 缓存
-func SetUserInfo(user User) {
-	key := "mapUserInfo:uid_" + fmt.Sprintf("%v", user.Id)
+func GetUserTempLocation(userId uint32) User {
+	user := User{}
+	key := "tempMapLocation:uid_" + fmt.Sprintf("%v", userId)
 	result, err := redis.Redis.Get(key).Result()
 	if err != nil {
-		return
+		return user
+	} else {
+		err := json.Unmarshal([]byte(result), &user)
+		if err != nil {
+			return user
+		}
 	}
-	var resUser User
-	err = json.Unmarshal([]byte(result), &resUser)
-	if err != nil {
-		return
-	}
+	return user
 }
 
 // userType 缓存
