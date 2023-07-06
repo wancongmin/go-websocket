@@ -21,6 +21,7 @@ type Conf struct {
 	Port       string
 	MaxConnect uint32
 	OssUrl     string
+	WebAdmin   string
 }
 
 type Database struct {

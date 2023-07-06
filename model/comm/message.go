@@ -1,9 +1,14 @@
-package model
+package comm
 
 import (
 	"encoding/json"
 	"websocket/impl"
 )
+
+type BaseReqMsg struct {
+	MsgId uint32
+	Data  map[string]interface{}
+}
 
 type ReceiveMsg struct {
 	MsgId  uint32
@@ -30,10 +35,11 @@ type SendLocationMsg struct {
 	Users  []User
 }
 
-func SendMsg(request impl.IRequest, msgId uint32, resp ResponseMsg) {
+func SendMsg(conn impl.Iconnection, msgId uint32, resp ResponseMsg) {
+	resp.Code = msgId
 	marshal, err := json.Marshal(resp)
 	if err != nil {
 		return
 	}
-	request.GetConnection().SendMsg(msgId, marshal)
+	conn.SendMsg(msgId, marshal)
 }

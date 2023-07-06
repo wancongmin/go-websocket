@@ -13,7 +13,8 @@ import (
 	"websocket/impl"
 	"websocket/lib/db"
 	"websocket/lib/mylog"
-	"websocket/model"
+	"websocket/model/club"
+	"websocket/model/comm"
 	"websocket/utils"
 	"websocket/utils/token"
 )
@@ -82,8 +83,8 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	cid := userToken.UserId
-	user := &model.User{}
-	db.Db.Table("fa_user").Where(model.User{Id: cid}).First(user)
+	user := &comm.User{}
+	db.Db.Table("fa_user").Where(comm.User{Id: cid}).First(user)
 	if user.Id == 0 {
 		mylog.Error("用户id不正确:" + fmt.Sprintf("%v", cid))
 		_ = conn.Close()
@@ -117,7 +118,7 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	dealConn := NewConnetion(s, conn, cid, s.MsgHandle)
 
 	//用户属性
-	userType := model.GetUserType(cid)
+	userType := comm.GetUserType(cid)
 	dealConn.SetProperty("type", userType.Type)
 	dealConn.SetProperty("roomId", userType.RoomId)
 	// HeartBeat check
@@ -158,14 +159,14 @@ func (s *Server) LocationWork() {
 			}
 			roomType := typeVal.(string)
 			userId := conn.GetConnID()
-			var message model.SendLocationMsg
+			var message comm.SendLocationMsg
 			message.MsgId = 201
 			message.Type = roomType
 			message.UserId = userId
 			switch roomType {
 			case "1":
 				// TODO 获取密友定位
-				message.Users = model.GetFriendLocation(userId)
+				message.Users = comm.GetFriendLocation(userId)
 			case "2", "3":
 				// TODO 获取活动成员定位
 				roomIdVal, err := conn.GetProperty("roomId")
@@ -185,9 +186,9 @@ func (s *Server) LocationWork() {
 					roomId = int(f)
 				}
 				if roomType == "2" {
-					message.Users = model.GetActivityMemberLocation(roomId, userId)
+					message.Users = club.GetActivityMemberLocation(roomId, userId)
 				} else {
-					message.Users = model.GetClubMemberLocation(roomId, userId)
+					message.Users = club.GetClubMemberLocation(roomId, userId)
 				}
 				message.RoomId = roomId
 			default:

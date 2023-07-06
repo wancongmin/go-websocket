@@ -1,4 +1,4 @@
-package model
+package comm
 
 import (
 	"websocket/lib/db"

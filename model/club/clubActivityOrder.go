@@ -1,7 +1,8 @@
-package model
+package club
 
 import (
 	"websocket/lib/db"
+	"websocket/model/comm"
 )
 
 type ClubActivityOrder struct {
@@ -13,8 +14,8 @@ type ClubActivityOrder struct {
 	PositionShow int
 }
 
-func GetActivityMemberLocation(activityId int, userId uint32) []User {
-	var users []User
+func GetActivityMemberLocation(activityId int, userId uint32) []comm.User {
+	var users []comm.User
 	if activityId == 0 {
 		return users
 	}
@@ -27,7 +28,7 @@ func GetActivityMemberLocation(activityId int, userId uint32) []User {
 		Group("user_id").
 		Find(&members)
 	for _, member := range members {
-		user := GetUserLocation(uint32(member.UserId))
+		user := comm.GetUserLocation(uint32(member.UserId))
 		if user.Id == 0 {
 			continue
 		}

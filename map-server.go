@@ -10,7 +10,7 @@ import (
 	"websocket/lib/db"
 	"websocket/lib/mylog"
 	"websocket/lib/redis"
-	"websocket/model"
+	"websocket/model/comm"
 	"websocket/router"
 	"websocket/service"
 	"websocket/utils"
@@ -57,7 +57,7 @@ func DoConnectionLost(conn impl.Iconnection) {
 // User-defined heartbeat message processing method
 // 用户自定义的心跳检测消息处理方法
 func myHeartBeatMsg(conn impl.Iconnection) []byte {
-	msg := model.SendStringMsg{
+	msg := comm.SendStringMsg{
 		MsgId: 200,
 		Data:  "pong",
 	}
@@ -95,6 +95,7 @@ func main() {
 	//s.AddRouter(100, &router.PingRouter{})
 	s.AddRouter(101, &router.LocationRouter{})
 	s.AddRouter(102, &router.ChangeGroupRouter{})
+	s.AddRouter(105, &router.CreateRoom{})
 
 	//注册连接的Hook钩子函数
 	s.SetConnStart(DoConnectionBegin)

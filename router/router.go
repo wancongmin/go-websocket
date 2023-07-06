@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"strings"
 	"websocket/impl"
 	"websocket/lib/mylog"
-	"websocket/model"
+	"websocket/model/club"
+	"websocket/model/comm"
 	"websocket/service"
 )
 
@@ -25,34 +27,11 @@ type ChangeGroupRouter struct {
 	service.BaseRouter
 }
 
-func (this *HolleRouter) Handle(request impl.IRequest) {
-	m := model.ReceiveMsg{}
-	err := json.Unmarshal(request.GetData(), &m)
-	if err != nil {
-		mylog.Error("Message parsing JSON error:" + err.Error())
-		return
-	}
-	if m.MsgId == 0 {
-		mylog.Error("Incorrect message parameters:" + err.Error())
-		return
-	}
-	//from_id, ok := m.Data["uid"]
-	//if !ok {
-	//	mylog.Error("发送参数不正确")
-	//}
-	//s.GetConnMgr().GetTotalConnections()
-	//err = service.Managers.Connections[m.UserId].SendMsg(200, request.GetData())
-	//if err != nil {
-	//	mylog.Error("Send message:" + err.Error())
-	//	return
-	//}
-}
-
 // Handle MsgId=100  心跳
 func (this *PingRouter) Handle(request impl.IRequest) {
 	//先读取客户端数据再回写
 	//log.Println("recv from client msgID=", request.GetMsgId(), ",data=", string(request.GetData()))
-	msg := model.SendStringMsg{
+	msg := comm.SendStringMsg{
 		MsgId: 200,
 		Data:  "pong",
 	}
@@ -75,30 +54,27 @@ func (this *LocationRouter) Handle(request impl.IRequest) {
 	if uid == 0 {
 		return
 	}
-	msg := model.ReceiveMsg{}
-	err := json.Unmarshal(request.GetData(), &msg)
+	location := comm.LocationReq{}
+	err := json.Unmarshal(request.GetData(), &location)
 	if err != nil {
 		mylog.Error("Unmarshal msg err:" + err.Error())
 		return
 	}
-	longitude, ok := msg.Data["longitude"]
-	if !ok {
+	if strings.TrimSpace(location.Longitude) == "" {
 		mylog.Error("get longitude empty")
 		return
 	}
-	latitude, ok := msg.Data["latitude"]
-	if !ok {
+	if strings.TrimSpace(location.Latitude) == "" {
 		mylog.Error("get latitude empty")
 		return
 	}
-	electricity := msg.Data["electricity"]
-	user := model.User{
+	user := comm.User{
 		Id:          uid,
-		Longitude:   longitude,
-		Latitude:    latitude,
-		Electricity: electricity,
+		Longitude:   location.Longitude,
+		Latitude:    location.Latitude,
+		Electricity: location.Electricity,
 	}
-	model.SetUserLocation(user)
+	comm.SetUserLocation(user)
 	log.Printf("【上传定位】ID:%d,Longitude:%s,Latitude:%s", user.Id, user.Longitude, user.Latitude)
 }
 
@@ -109,60 +85,51 @@ func (this *ChangeGroupRouter) Handle(request impl.IRequest) {
 	if uid == 0 {
 		return
 	}
-	msg := model.ReceiveMsg{}
-	err := json.Unmarshal(request.GetData(), &msg)
+	userType := comm.UserType{}
+	err := json.Unmarshal(request.GetData(), &userType)
 	if err != nil {
 		mylog.Error("Unmarshal msg err:" + err.Error())
 		return
 	}
-	roomType, ok := msg.Data["type"]
-	if !ok {
-		mylog.Error("get room type empty")
-		return
-	}
-	if roomType != "0" && roomType != "1" && roomType != "2" && roomType != "3" {
+	if userType.Type != "0" && userType.Type != "1" && userType.Type != "2" && userType.Type != "3" {
 		// roomType值错误
+		mylog.Error("get room type error,type:" + userType.Type)
 		return
 	}
-	var userType model.UserType
-	userType.Type = roomType
-	//request.GetConnection().SetProperty("type", roomType)
-	var message model.SendLocationMsg
+	var message comm.SendLocationMsg
 	message.MsgId = 201
-	message.Type = roomType
+	message.Type = userType.Type
 	message.UserId = uid
-	if roomType == "2" || roomType == "3" {
-		if roomId, ok := msg.Data["roomId"]; ok {
-			//request.GetConnection().SetProperty("roomId", roomId)
-			userType.RoomId = roomId
-			model.SetUserType(request, userType)
-			intRoomId, err := strconv.Atoi(roomId)
+	if userType.Type == "2" || userType.Type == "3" {
+		if userType.RoomId != "" {
+			comm.SetUserType(request, userType)
+			intRoomId, err := strconv.Atoi(userType.RoomId)
 			if err != nil {
 				return
 			}
 			message.RoomId = intRoomId
-			if roomType == "2" {
-				message.Users = model.GetActivityMemberLocation(intRoomId, uid)
+			if userType.Type == "2" {
+				message.Users = club.GetActivityMemberLocation(intRoomId, uid)
 			} else {
-				message.Users = model.GetClubMemberLocation(intRoomId, uid)
+				message.Users = club.GetClubMemberLocation(intRoomId, uid)
 			}
 			marshal, err := json.Marshal(message)
 			if err != nil {
 				return
 			}
 			request.GetConnection().SendMsg(201, marshal)
-			log.Printf("【切换频道】ID:%d,Type:%s,RoomId:%s", uid, roomType, roomId)
+			log.Printf("【切换频道】ID:%d,Type:%s,RoomId:%s", uid, userType.Type, userType.RoomId)
 		}
 	} else {
-		if roomType == "1" {
-			message.Users = model.GetFriendLocation(uid)
+		if userType.Type == "1" {
+			message.Users = comm.GetFriendLocation(uid)
 			marshal, err := json.Marshal(message)
 			if err != nil {
 				return
 			}
 			request.GetConnection().SendMsg(201, marshal)
 		}
-		model.SetUserType(request, userType)
-		log.Printf("【切换频道】ID:%d,Type:%s", uid, roomType)
+		comm.SetUserType(request, userType)
+		log.Printf("【切换频道】ID:%d,Type:%s", uid, userType.Type)
 	}
 }

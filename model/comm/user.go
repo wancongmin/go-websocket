@@ -1,4 +1,4 @@
-package model
+package comm
 
 import (
 	"encoding/json"
@@ -28,6 +28,13 @@ type User struct {
 type UserType struct {
 	Type   string
 	RoomId string
+}
+
+// 接收定位消息
+type LocationReq struct {
+	Longitude   string
+	Latitude    string
+	Electricity string
 }
 
 func SetUserLocation(request User) {
@@ -103,19 +110,19 @@ func GetUserLocation(userId uint32) User {
 	return user
 }
 
-func GetUserTempLocation(userId uint32) User {
+func GetUserTempLocation(userId uint32) (User, error) {
 	user := User{}
 	key := "tempMapLocation:uid_" + fmt.Sprintf("%v", userId)
 	result, err := redis.Redis.Get(key).Result()
 	if err != nil {
-		return user
+		return user, err
 	} else {
-		err := json.Unmarshal([]byte(result), &user)
+		err = json.Unmarshal([]byte(result), &user)
 		if err != nil {
-			return user
+			return user, err
 		}
 	}
-	return user
+	return user, nil
 }
 
 // userType 缓存

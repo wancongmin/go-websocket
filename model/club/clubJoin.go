@@ -1,6 +1,9 @@
-package model
+package club
 
-import "websocket/lib/db"
+import (
+	"websocket/lib/db"
+	"websocket/model/comm"
+)
 
 type ClubJoin struct {
 	Id           int
@@ -10,8 +13,8 @@ type ClubJoin struct {
 	PositionShow int
 }
 
-func GetClubMemberLocation(clubId int, userId uint32) []User {
-	var users []User
+func GetClubMemberLocation(clubId int, userId uint32) []comm.User {
+	var users []comm.User
 	if clubId == 0 {
 		return users
 	}
@@ -22,7 +25,7 @@ func GetClubMemberLocation(clubId int, userId uint32) []User {
 		Where("user_id <> ?", userId).
 		Find(&members)
 	for _, member := range members {
-		user := GetUserLocation(uint32(member.UserId))
+		user := comm.GetUserLocation(uint32(member.UserId))
 		if user.Id == 0 {
 			continue
 		}

@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"math/rand"
 	"regexp"
+	"strings"
+	"time"
 	"websocket/config"
 	"websocket/lib/mylog"
 )
@@ -46,4 +49,23 @@ func RoundThumb(url, w, r string) string {
 		url = url + "?x-oss-process=image/resize,w_" + w + ",m_lfit"
 	}
 	return url
+}
+
+var CHARS = []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+	"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
+
+/*
+RandNumString  生成随机数字字符串([0~9])
+
+	lenNum 长度
+*/
+func RandNumString(lenNum int) string {
+	str := strings.Builder{}
+	length := 10
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < lenNum; i++ {
+		str.WriteString(CHARS[52+rand.Intn(length)])
+	}
+	return str.String()
 }

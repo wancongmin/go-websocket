@@ -10,7 +10,7 @@ import (
 	"time"
 	"websocket/impl"
 	"websocket/lib/mylog"
-	"websocket/model"
+	"websocket/model/comm"
 	"websocket/utils"
 )
 
@@ -79,7 +79,7 @@ func (c *Connection) StartReader() {
 		if n > 0 && c.hc != nil {
 			c.updateActivity()
 		}
-		m := model.ReceiveMsg{}
+		m := comm.BaseReqMsg{}
 		err = json.Unmarshal(data, &m)
 		if err != nil {
 			mylog.Error("消息解析json错误:" + err.Error() + "data:" + string(data))
@@ -91,7 +91,12 @@ func (c *Connection) StartReader() {
 		// TODO  处理错误
 		msg := Message{}
 		msg.SetMsgId(m.MsgId)
-		msg.SetData(data)
+		marshal, err := json.Marshal(m.Data)
+		if err != nil {
+			mylog.Error("消息系列化错误:" + err.Error() + "data:" + string(marshal))
+			continue
+		}
+		msg.SetData(marshal)
 		req := Request{
 			conn: c,
 			msg:  msg,
