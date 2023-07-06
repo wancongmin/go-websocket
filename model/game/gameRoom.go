@@ -234,16 +234,37 @@ func EndRoom(roomId string) {
 		mylog.Error("获取游戏房间信息不正确,roomId:" + roomId)
 		return
 	}
+	players := GetPlayersByRoomId(roomId)
+	isPreyWin := false
+	for _, player := range players {
+		if player.Role == 1 {
+			isPreyWin = true
+			break
+		}
+	}
 	// 修改游戏状态
-	room.Status = 4
+	room.Status = 3
 	room.CloseTime = time.Now().Unix()
 	tx := db.Db.Begin()
 	if err = tx.Table("fa_game_room").Save(&room).Error; err != nil {
 		tx.Rollback()
 		return
 	}
-	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=?", room.Id, 0).
-		Updates(GamePlayer{Status: 4}).Error; err != nil {
+	var PreyStatus, HunterStatus int
+	if isPreyWin {
+		PreyStatus = 1
+		HunterStatus = 2
+	} else {
+		PreyStatus = 2
+		HunterStatus = 1
+	}
+	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=? AND role", room.Id, 0, 1).
+		Updates(GamePlayer{Status: HunterStatus}).Error; err != nil {
+		tx.Rollback()
+		return
+	}
+	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=? AND role", room.Id, 0, 2).
+		Updates(GamePlayer{Status: PreyStatus}).Error; err != nil {
 		tx.Rollback()
 		return
 	}

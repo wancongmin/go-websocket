@@ -42,7 +42,7 @@ func GetPlayerByUid(uid uint32, roomId string) (GamePlayer, error) {
 	return GamePlayer{}, errors.New("empty")
 }
 
-// 获取房间内玩家列表
+// GetPlayersByRoomId 获取房间内所有玩家列表
 func GetPlayersByRoomId(roomId string) []GamePlayer {
 	key := "gameRoomPlayers:roomId_" + roomId
 	var players []GamePlayer
