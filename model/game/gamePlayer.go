@@ -3,6 +3,7 @@ package game
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"time"
 	"websocket/core"
 	"websocket/lib/db"
@@ -11,13 +12,15 @@ import (
 )
 
 type GamePlayer struct {
-	Id         int       `gorm:"id"`
-	UserId     uint32    `gorm:"user_id"`
-	RoomId     string    `gorm:"room_id"`
-	Role       int       `gorm:"room_id"`
-	Status     int       `gorm:"status"`
-	CreateTime int64     `gorm:"create_time"`
-	User       comm.User `gorm:"-"`
+	Id             int       `gorm:"id"`
+	UserId         uint32    `gorm:"user_id"`
+	RoomId         string    `gorm:"room_id"`
+	Role           int       `gorm:"room_id"`
+	Status         int       `gorm:"status"`
+	CreateTime     int64     `gorm:"create_time"`
+	ErrorMsg       string    `gorm:"error_msg"`
+	User           comm.User `gorm:"-"`
+	LastActiveTime int64     `gorm:"-" json:"-"`
 }
 
 type EnterRoomResMsg struct {
@@ -33,7 +36,7 @@ type EnterRoomRespMsg struct {
 
 // 获取玩家信息
 func GetPlayerByUid(uid uint32, roomId string) (GamePlayer, error) {
-	players := GetPlayersByRoomId(roomId)
+	players := GetRunningPlayersByRoomId(roomId)
 	for _, player := range players {
 		if player.UserId == uid {
 			return player, nil
@@ -42,8 +45,8 @@ func GetPlayerByUid(uid uint32, roomId string) (GamePlayer, error) {
 	return GamePlayer{}, errors.New("empty")
 }
 
-// GetPlayersByRoomId 获取房间内所有玩家列表
-func GetPlayersByRoomId(roomId string) []GamePlayer {
+// GetRunningPlayersByRoomId 获取房间内所有玩家列表
+func GetRunningPlayersByRoomId(roomId string) []GamePlayer {
 	key := "gameRoomPlayers:roomId_" + roomId
 	var players []GamePlayer
 	result, err := redis.Redis.Get(key).Result()
@@ -52,7 +55,7 @@ func GetPlayersByRoomId(roomId string) []GamePlayer {
 		return players
 	}
 	db.Db.Table("fa_game_player").
-		Where("room_id = ?", roomId).
+		Where("room_id = ? AND status = ?", roomId, 0).
 		Find(&players)
 	marshal, err := json.Marshal(players)
 	if err != nil {
@@ -67,14 +70,11 @@ func ClearPlayersCache(roomId string) {
 	redis.Redis.Del(key)
 }
 
-// 获取有定位信息的用户数据
+// GetOlinePlayers 获取有定位信息的用户数据
 func GetOlinePlayers(roomId string) []GamePlayer {
 	var resPlayers []GamePlayer
-	players := GetPlayersByRoomId(roomId)
+	players := GetRunningPlayersByRoomId(roomId)
 	for _, player := range players {
-		if player.Status != 0 {
-			continue
-		}
 		// 用户不在线
 		olinePlayer := core.WorldMgrObj.GetPlayerByPID(player.UserId)
 		if olinePlayer == nil {
@@ -89,4 +89,26 @@ func GetOlinePlayers(roomId string) []GamePlayer {
 		resPlayers = append(resPlayers, player)
 	}
 	return resPlayers
+}
+
+// ErrorOutRoom 异常退出房间
+func ErrorOutRoom(player GamePlayer, errorMsg string) {
+	db.Db.Table("fa_game_player").
+		Where("id = ? AND status = ?", player.Id, 0).Updates(GamePlayer{Status: 6, ErrorMsg: errorMsg})
+	ClearPlayersCache(player.RoomId)
+	msg := comm.ResponseMsg{
+		Code: 1,
+		Msg:  errorMsg,
+	}
+	SendMessage(player.UserId, 207, msg)
+	log.Printf("【Game】用户异常退出房间:%d", player.UserId)
+}
+
+// SendMessage 发送消息
+func SendMessage(uid, msgId uint32, msg comm.ResponseMsg) {
+	corePlayer := core.WorldMgrObj.GetPlayerByPID(uid)
+	if corePlayer == nil {
+		return
+	}
+	comm.SendMsg(corePlayer.Conn, msgId, msg)
 }

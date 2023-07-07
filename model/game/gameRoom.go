@@ -25,9 +25,9 @@ type GameRoom struct {
 	HidingSecond    int    `gorm:"hiding_second"`
 	ArrestSecond    int    `gorm:"arrest_second"`
 	Status          int    `gorm:"status"`
-	StartHidingTime int    `gorm:"start_hiding_time"`
-	StartArrestTime int    `gorm:"start_arrest_time"`
-	EndTime         int    `gorm:"end_time"`
+	StartHidingTime int64  `gorm:"start_hiding_time"`
+	StartArrestTime int64  `gorm:"start_arrest_time"`
+	EndTime         int64  `gorm:"end_time"`
 	Coordinate      string `gorm:"coordinate"`
 	ChatRoom        string `gorm:"chat_room"`
 	CreateTime      int64  `gorm:"create_time"`
@@ -124,7 +124,6 @@ func CreateRoom(request impl.IRequest, userId uint32) (GameRoom, error) {
 		tx.Rollback()
 		return room, err
 	}
-	log.Printf("fa_game_player:%+v", player)
 	if err = tx.Table("fa_game_player").Create(&player).Error; err != nil {
 		tx.Rollback()
 		return room, err
@@ -134,6 +133,7 @@ func CreateRoom(request impl.IRequest, userId uint32) (GameRoom, error) {
 	resp.Msg = "success"
 	resp.Data = room
 	comm.SendMsg(conn, 205, resp)
+	log.Printf("【Game】房间创建成功:%+v", room)
 	return room, nil
 }
 
@@ -218,7 +218,7 @@ func CloseRoom(roomId string) {
 		return
 	}
 	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=?", room.Id, 0).
-		Updates(GamePlayer{Status: 4}).Error; err != nil {
+		Updates(GamePlayer{Status: 4, ErrorMsg: "房间异常关闭"}).Error; err != nil {
 		tx.Rollback()
 		return
 	}
@@ -234,8 +234,8 @@ func EndRoom(roomId string) {
 		mylog.Error("获取游戏房间信息不正确,roomId:" + roomId)
 		return
 	}
-	players := GetPlayersByRoomId(roomId)
-	isPreyWin := false
+	players := GetRunningPlayersByRoomId(roomId)
+	isPreyWin := false //是否猎物赢
 	for _, player := range players {
 		if player.Role == 1 {
 			isPreyWin = true
@@ -250,6 +250,7 @@ func EndRoom(roomId string) {
 		tx.Rollback()
 		return
 	}
+	//isPreyWin是否猎物赢,role:1=猎人Hunter,2=猎物Prey,状态:1=胜利,2=失败
 	var PreyStatus, HunterStatus int
 	if isPreyWin {
 		PreyStatus = 1
@@ -269,6 +270,34 @@ func EndRoom(roomId string) {
 		return
 	}
 	tx.Commit()
+	// 发送通知消息
+	for _, player := range players {
+		if player.Role == 0 {
+			log.Printf("【game】角色异常，playerId:%d", player.Id)
+		}
+		var isWin = false
+		if player.Role == 2 {
+			if isPreyWin {
+				isWin = true
+			}
+		} else {
+			if !isPreyWin {
+				isWin = true
+			}
+		}
+		var endMsg string
+		if isWin {
+			endMsg = "恭喜领赢得本场游戏"
+		} else {
+			endMsg = "游戏失败，请再接再厉！"
+		}
+		msg := comm.ResponseMsg{
+			Code: 1,
+			Msg:  endMsg,
+			Data: player,
+		}
+		SendMessage(player.UserId, 208, msg)
+	}
 	ClearRoomCache(roomId)
 	ClearPlayersCache(roomId)
 }

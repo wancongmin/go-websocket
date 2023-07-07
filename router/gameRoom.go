@@ -23,6 +23,8 @@ func (this *CreateRoom) Handle(request impl.IRequest) {
 	log.Printf("房间创建成功,roomId:" + room.Id)
 	// 启动服务
 	roomChecker := game.NewGameRoomChecker(3*time.Second, room)
+	roomChecker.CloseRoomHandle = game.CloseRoom
+	roomChecker.EndRoomHandle = game.EndRoom
 	roomChecker.Start()
 }
 
