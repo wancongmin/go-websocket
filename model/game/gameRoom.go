@@ -203,44 +203,49 @@ func CreateChatRoom(url string, userId uint32, groupname, desc string) (string, 
 }
 
 // CloseRoom 关闭游戏
-func CloseRoom(roomId string) {
-	room, err := GetRoomCache(roomId)
-	if err != nil {
-		mylog.Error("获取游戏房间信息不正确,roomId:" + roomId)
-		return
-	}
-	// 修改游戏状态
+func CloseRoom(room GameRoom, errorMsg string) {
 	room.Status = 4
 	room.CloseTime = time.Now().Unix()
 	tx := db.Db.Begin()
+	var err error
 	if err = tx.Table("fa_game_room").Save(&room).Error; err != nil {
 		tx.Rollback()
 		return
 	}
 	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=?", room.Id, 0).
-		Updates(GamePlayer{Status: 4, ErrorMsg: "房间异常关闭"}).Error; err != nil {
+		Updates(GamePlayer{Status: 4, ErrorMsg: errorMsg}).Error; err != nil {
 		tx.Rollback()
 		return
 	}
 	tx.Commit()
-	ClearRoomCache(roomId)
-	ClearPlayersCache(roomId)
+	ClearRoomCache(room.Id)
+	ClearPlayersCache(room.Id)
+	msg := comm.ResponseMsg{
+		Code: 1,
+		Msg:  "游戏关闭",
+		Data: map[string]string{"roomId": room.Id},
+	}
+	SendMsgToPlayers(room.Id, 0, []GamePlayer{}, 209, msg)
 }
 
-// EndRoom 结束游戏
-func EndRoom(roomId string) {
-	room, err := GetRoomCache(roomId)
-	if err != nil {
-		mylog.Error("获取游戏房间信息不正确,roomId:" + roomId)
-		return
-	}
-	players := GetRunningPlayersByRoomId(roomId)
-	isPreyWin := false //是否猎物赢
-	for _, player := range players {
-		if player.Role == 1 {
-			isPreyWin = true
-			break
+// StartArrest 开始抓捕
+func StartArrest(room GameRoom) {
+	db.Db.Table("fa_game_room").Where("id = ?", room.Id).Updates(GamePlayer{Status: 2})
+	ClearRoomCache(room.Id)
+}
+
+func Referee(roomId string, room GameRoom, winRole int, players []GamePlayer) {
+	var err error
+	if room.Id == "" {
+		room, err = GetRoomCache(roomId)
+		if err != nil {
+			mylog.Error("获取游戏房间信息不正确,roomId:" + roomId)
+			return
 		}
+	}
+	var loseRole = 1
+	if winRole == 1 {
+		loseRole = 2
 	}
 	// 修改游戏状态
 	room.Status = 3
@@ -250,54 +255,49 @@ func EndRoom(roomId string) {
 		tx.Rollback()
 		return
 	}
-	//isPreyWin是否猎物赢,role:1=猎人Hunter,2=猎物Prey,状态:1=胜利,2=失败
-	var PreyStatus, HunterStatus int
-	if isPreyWin {
-		PreyStatus = 1
-		HunterStatus = 2
-	} else {
-		PreyStatus = 2
-		HunterStatus = 1
-	}
-	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=? AND role", room.Id, 0, 1).
-		Updates(GamePlayer{Status: HunterStatus}).Error; err != nil {
+	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=? AND role = ?", room.Id, 0, winRole).
+		Updates(GamePlayer{Status: 1}).Error; err != nil {
 		tx.Rollback()
 		return
 	}
-	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=? AND role", room.Id, 0, 2).
-		Updates(GamePlayer{Status: PreyStatus}).Error; err != nil {
+	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=? AND role =?", room.Id, 0, loseRole).
+		Updates(GamePlayer{Status: 2}).Error; err != nil {
 		tx.Rollback()
 		return
 	}
 	tx.Commit()
-	// 发送通知消息
-	for _, player := range players {
-		if player.Role == 0 {
-			log.Printf("【game】角色异常，playerId:%d", player.Id)
-		}
-		var isWin = false
-		if player.Role == 2 {
-			if isPreyWin {
-				isWin = true
-			}
-		} else {
-			if !isPreyWin {
-				isWin = true
-			}
-		}
-		var endMsg string
-		if isWin {
-			endMsg = "恭喜领赢得本场游戏"
-		} else {
-			endMsg = "游戏失败，请再接再厉！"
-		}
-		msg := comm.ResponseMsg{
-			Code: 1,
-			Msg:  endMsg,
-			Data: player,
-		}
-		SendMessage(player.UserId, 208, msg)
-	}
 	ClearRoomCache(roomId)
 	ClearPlayersCache(roomId)
+	msg := comm.ResponseMsg{
+		Code: 1,
+		Msg:  "恭喜领赢得本场游戏",
+		Data: room,
+	}
+	SendMsgToPlayers(room.Id, winRole, players, 208, msg)
+	msg = comm.ResponseMsg{
+		Code: 1,
+		Msg:  "游戏失败，请再接再厉！",
+		Data: room,
+	}
+	SendMsgToPlayers(room.Id, loseRole, players, 208, msg)
+	log.Printf("【Game】游戏结束,roomId:%s,winRole:%d", room.Id, winRole)
+}
+
+// EndRoom 游戏结束
+// 游戏时间到，有猎物则猎物赢
+// 全部为猎人-猎人赢/全部为猎物-猎物赢
+func EndRoom(room GameRoom) {
+	players := GetRunningPlayersByRoomId(room.Id)
+	isPreyWin := false //是否猎物赢
+	for _, player := range players {
+		if player.Role == 2 {
+			isPreyWin = true
+			break
+		}
+	}
+	if isPreyWin {
+		Referee(room.Id, room, 2, players)
+	} else {
+		Referee(room.Id, room, 1, players)
+	}
 }

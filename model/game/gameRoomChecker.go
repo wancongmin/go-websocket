@@ -17,8 +17,8 @@ type GameRoomChecker struct {
 	lastErrorTime   int                    //上次异常时间
 	Players         map[uint32]*GamePlayer //当前在线的玩家集合
 	pLock           sync.RWMutex           //保护Players的互斥读写机制
-	CloseRoomHandle func(roomId string)
-	EndRoomHandle   func(roomId string)
+	CloseRoomHandle func(room GameRoom, errorMsg string)
+	EndRoomHandle   func(room GameRoom)
 }
 
 func NewGameRoomChecker(interval time.Duration, room GameRoom) *GameRoomChecker {
@@ -56,19 +56,24 @@ func (h *GameRoomChecker) check() {
 		h.Stop()
 		return
 	}
+	nowTime := time.Now().Unix()
 	//游戏结束
-	if (room.Status == 2 && room.EndTime < time.Now().Unix()) || room.Status == 3 {
-		log.Printf("【game】游戏结束,roomId:%s", h.GameRoom.Id)
-		h.EndRoomHandle(h.GameRoom.Id)
+	if room.Status == 2 && room.EndTime < nowTime {
+		log.Printf("【game】游戏结束时间到,roomId:%s", h.GameRoom.Id)
+		h.EndRoomHandle(room)
 		h.Stop()
 		return
 	}
+	//开始抓捕
+	if room.Status == 1 && room.StartArrestTime < nowTime {
+		StartArrest(room)
+	}
 	//玩家信息检测
-	if !h.CheckRoomPlayers(h.GameRoom.Id) {
+	if !h.CheckRoomPlayers(room) {
 		return
 	}
 	//定时推送房间信息
-	h.sendRoomInfoToPlayers(room.Id)
+	h.sendRoomInfoToPlayers(room)
 }
 
 func (h *GameRoomChecker) Start() {
@@ -97,15 +102,22 @@ func (h *GameRoomChecker) GetPlayerByUid(uid uint32) *GamePlayer {
 }
 
 // CheckRoomPlayers 检查房间用户
-func (h *GameRoomChecker) CheckRoomPlayers(roomId string) bool {
-	players := GetRunningPlayersByRoomId(roomId)
+func (h *GameRoomChecker) CheckRoomPlayers(room GameRoom) bool {
+	players := GetRunningPlayersByRoomId(room.Id)
 	if len(players) == 0 {
-		log.Printf("【Game】房间没有玩家，游戏结束,roomId:%s", roomId)
-		h.CloseRoomHandle(roomId)
+		log.Printf("【Game】房间没有玩家，游戏结束,roomId:%s", room.Id)
+		h.CloseRoomHandle(room, "房间异常关闭")
 		h.Stop()
 		return false
 	}
+	var roleOneNum, roleTowNum int
 	for _, player := range players {
+		if player.Role == 1 {
+			roleOneNum++
+		}
+		if player.Role == 2 {
+			roleTowNum++
+		}
 		//检查用户异常时长
 		currentPlayer := h.GetPlayerByUid(player.UserId)
 		if currentPlayer == nil {
@@ -130,19 +142,34 @@ func (h *GameRoomChecker) CheckRoomPlayers(roomId string) bool {
 		player.LastActiveTime = time.Now().Unix()
 		h.SuperPlayer(&player)
 	}
+	if room.Status == 1 || room.Status == 2 {
+		// 角色2胜利
+		if roleOneNum == 0 {
+			log.Printf("【Game】游戏结束,房间没有在线猎人,roomId:%s", room.Id)
+			Referee(room.Id, room, 2, players)
+			h.Stop()
+			return false
+		}
+		// 角色1胜利
+		if roleTowNum == 0 {
+			log.Printf("【Game】游戏结束,房间没有在线猎物,roomId:%s", room.Id)
+			Referee(room.Id, room, 1, players)
+			h.Stop()
+			return false
+		}
+	}
 	return true
 }
 
 // 给所有玩家发送房间消息
-func (h *GameRoomChecker) sendRoomInfoToPlayers(roomId string) {
-	room, err := GetRoomCache(roomId) //获取房间信息
-	if err != nil {
-		mylog.Error("获取房间信息错误,roomId:" + roomId)
-	}
+func (h *GameRoomChecker) sendRoomInfoToPlayers(room GameRoom) {
 	data := make(map[string]interface{})
 	data["Room"] = room
-	data["OnlinePlayers"] = GetOlinePlayers(roomId) //在线玩家
-	players := GetRunningPlayersByRoomId(roomId)    //所有玩家
+	data["OnlinePlayers"] = GetOlinePlayers(room.Id) //在线玩家
+	players := GetRunningPlayersByRoomId(room.Id)    //所有玩家
+	ruleOneNum, ruleTowNum := GetRuleNum(players)
+	data["RuleOneNum"] = ruleOneNum
+	data["RuleTowNum"] = ruleTowNum
 	var successNum = 0
 	for _, player := range players {
 		data["Self"] = player
@@ -154,5 +181,7 @@ func (h *GameRoomChecker) sendRoomInfoToPlayers(roomId string) {
 		SendMessage(player.UserId, 206, msg)
 		successNum++
 	}
-	log.Printf("【Game】定时发送房间信息,roomId:%s,allNum:%d,sucessNum:%d", roomId, len(players), successNum)
+	startArrestTime := time.Unix(room.StartArrestTime, 0).Format("2006-01-02 15:04:05")
+	endTime := time.Unix(room.EndTime, 0).Format("2006-01-02 15:04:05")
+	log.Printf("【Game】定时信息,roomId:%s,allNum:%d,sucessNum:%d,房间状态:%d,开始抓捕时间:%s,结束时间:%s", room.Id, len(players), successNum, room.Status, startArrestTime, endTime)
 }
