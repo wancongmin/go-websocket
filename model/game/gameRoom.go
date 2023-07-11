@@ -52,6 +52,14 @@ func CreateRoom(request impl.IRequest, userId uint32) (GameRoom, error) {
 		comm.SendMsg(conn, 205, resp)
 		return room, err
 	}
+	runPlayer, _ := GetRunningPlayer(userId)
+	if runPlayer.Id != 0 {
+		resp.Code = 0
+		resp.Msg = "你有进行中的游戏，请先退出当前游戏"
+		resp.Data = runPlayer
+		comm.SendMsg(conn, 205, resp)
+		return room, err
+	}
 	if roomRes.HidingSecond == 0 {
 		resp.Code = 0
 		resp.Msg = "请填写正确的躲藏时间"

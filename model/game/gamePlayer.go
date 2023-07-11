@@ -2,7 +2,6 @@ package game
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"time"
 	"websocket/core"
@@ -34,15 +33,15 @@ type EnterRoomRespMsg struct {
 	Msg   string
 }
 
-// 获取玩家信息
-func GetPlayerByUid(uid uint32, roomId string) (GamePlayer, error) {
-	players := GetRunningPlayersByRoomId(roomId)
-	for _, player := range players {
-		if player.UserId == uid {
-			return player, nil
-		}
-	}
-	return GamePlayer{}, errors.New("empty")
+// GetRunningPlayer 获取玩家信息
+func GetRunningPlayer(uid uint32) (GamePlayer, error) {
+	var player GamePlayer
+	err := db.Db.Table("fa_game_player").
+		Where("user_id = ? AND status = ? ", uid, 0).
+		First(&player).Error
+	log.Println("数据库err", err)
+	log.Printf("player:%+v", player)
+	return player, nil
 }
 
 // GetRunningPlayersByRoomId 获取房间内所有玩家列表
