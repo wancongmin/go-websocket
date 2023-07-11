@@ -36,7 +36,7 @@ type SendLocationMsg struct {
 }
 
 func SendMsg(conn impl.Iconnection, msgId uint32, resp ResponseMsg) {
-	resp.Code = msgId
+	resp.MsgId = msgId
 	marshal, err := json.Marshal(resp)
 	if err != nil {
 		return

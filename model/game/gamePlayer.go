@@ -111,3 +111,31 @@ func SendMessage(uid, msgId uint32, msg comm.ResponseMsg) {
 	}
 	comm.SendMsg(corePlayer.Conn, msgId, msg)
 }
+
+// SendMsgToPlayers 给玩家发消息
+func SendMsgToPlayers(roomId string, role int, players []GamePlayer, msgId uint32, msg comm.ResponseMsg) {
+	if len(players) == 0 {
+		players = GetRunningPlayersByRoomId(roomId)
+	}
+	for _, player := range players {
+		if role != 0 && player.Role != role {
+			continue
+		}
+		SendMessage(player.UserId, msgId, msg)
+	}
+
+}
+
+// 获取角色数量
+func GetRuleNum(players []GamePlayer) (ruleOneNum, ruleTowNum int) {
+	var roleOneNum, roleTowNum int
+	for _, player := range players {
+		if player.Role == 1 {
+			roleOneNum++
+		}
+		if player.Role == 2 {
+			roleTowNum++
+		}
+	}
+	return roleOneNum, roleTowNum
+}
