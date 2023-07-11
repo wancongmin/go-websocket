@@ -10,7 +10,7 @@ import (
 	"websocket/model/comm"
 )
 
-type GameRoomChecker struct {
+type RoomChecker struct {
 	interval        time.Duration //  Heartbeat detection interval(检测时间间隔)
 	quitChan        chan bool     // Quit signal(退出信号)
 	GameRoom        GameRoom
@@ -21,8 +21,8 @@ type GameRoomChecker struct {
 	EndRoomHandle   func(room GameRoom)
 }
 
-func NewGameRoomChecker(interval time.Duration, room GameRoom) *GameRoomChecker {
-	roomChecker := &GameRoomChecker{
+func NewGameRoomChecker(interval time.Duration, room GameRoom) *RoomChecker {
+	roomChecker := &RoomChecker{
 		interval: interval,
 		quitChan: make(chan bool),
 		GameRoom: room,
@@ -33,7 +33,7 @@ func NewGameRoomChecker(interval time.Duration, room GameRoom) *GameRoomChecker 
 }
 
 // 游戏开始，开启检测器
-func (r *GameRoomChecker) start() {
+func (r *RoomChecker) start() {
 	ticker := time.NewTicker(r.interval)
 	for {
 		select {
@@ -47,7 +47,7 @@ func (r *GameRoomChecker) start() {
 }
 
 // 房间轮训
-func (h *GameRoomChecker) check() {
+func (h *RoomChecker) check() {
 	// 获取最新房间信息
 	room, err := GetRoomCache(h.GameRoom.Id)
 	if err != nil {
@@ -76,25 +76,25 @@ func (h *GameRoomChecker) check() {
 	h.sendRoomInfoToPlayers(room)
 }
 
-func (h *GameRoomChecker) Start() {
+func (h *RoomChecker) Start() {
 	go h.start()
 }
 
-func (h *GameRoomChecker) Stop() {
+func (h *RoomChecker) Stop() {
 	go func() {
 		h.quitChan <- true
 	}()
 }
 
 // SuperPlayer 提供添加一个玩家的的功能，将玩家添加进玩家信息表Players
-func (h *GameRoomChecker) SuperPlayer(player *GamePlayer) {
+func (h *RoomChecker) SuperPlayer(player *GamePlayer) {
 	h.pLock.Lock()
 	h.Players[player.UserId] = player
 	h.pLock.Unlock()
 }
 
 // GetPlayerByUid 通过玩家ID 获取对应玩家信息
-func (h *GameRoomChecker) GetPlayerByUid(uid uint32) *GamePlayer {
+func (h *RoomChecker) GetPlayerByUid(uid uint32) *GamePlayer {
 	h.pLock.RLock()
 	defer h.pLock.RUnlock()
 
@@ -102,7 +102,7 @@ func (h *GameRoomChecker) GetPlayerByUid(uid uint32) *GamePlayer {
 }
 
 // CheckRoomPlayers 检查房间用户
-func (h *GameRoomChecker) CheckRoomPlayers(room GameRoom) bool {
+func (h *RoomChecker) CheckRoomPlayers(room GameRoom) bool {
 	players := GetRunningPlayersByRoomId(room.Id)
 	if len(players) == 0 {
 		log.Printf("【Game】房间没有玩家，游戏结束,roomId:%s", room.Id)
@@ -162,7 +162,7 @@ func (h *GameRoomChecker) CheckRoomPlayers(room GameRoom) bool {
 }
 
 // 给所有玩家发送房间消息
-func (h *GameRoomChecker) sendRoomInfoToPlayers(room GameRoom) {
+func (h *RoomChecker) sendRoomInfoToPlayers(room GameRoom) {
 	data := make(map[string]interface{})
 	data["Room"] = room
 	data["OnlinePlayers"] = GetOlinePlayers(room.Id) //在线玩家
