@@ -13,6 +13,7 @@ import (
 	"websocket/impl"
 	"websocket/lib/db"
 	"websocket/lib/mylog"
+	"websocket/lib/redis"
 	"websocket/model/club"
 	"websocket/model/comm"
 	"websocket/utils"
@@ -142,13 +143,46 @@ func (s *Server) Server() {
 	//启动server 的服务器功能
 	s.Start()
 	// TODO 做一些启动服务器之后的额外工作
-	s.LocationWork()
+	go s.LocationWork()
+	//从消息队列中
+	go s.MessageQueue()
 	//阻塞状态
 	select {}
 }
 
 // 发送定位消息给用户
+func (s *Server) MessageQueue() {
+	defer utils.CustomError()
+	key := "message_queue"
+	ticker := time.NewTicker(1 * time.Second)
+	for _ = range ticker.C {
+		// 这里处理定时器周期性触发后的逻辑
+		result, err := redis.Redis.LPop(key).Result()
+		if err != nil {
+			continue
+		}
+		log.Println("result", result)
+		var queueMsg comm.QueueMsg
+		err = json.Unmarshal([]byte(result), &queueMsg)
+		if err != nil {
+			mylog.Error("获取redis message queue Unmarshal err:" + err.Error())
+		}
+		log.Printf("queueMsg:%+v", queueMsg)
+		for _, toId := range queueMsg.ToUserIds {
+			msg := comm.ResponseMsg{
+				Code:       1,
+				Msg:        queueMsg.Msg,
+				FromUserId: queueMsg.FromUserId,
+				Data:       queueMsg.Data,
+			}
+			comm.SendPlayerMessage(toId, queueMsg.MsgId, msg)
+		}
+	}
+}
+
+// 发送定位消息给用户
 func (s *Server) LocationWork() {
+	defer utils.CustomError()
 	for {
 		//for _, conn := range s.GetConnMgr().GetTotalConnections() {
 		for _, player := range core.WorldMgrObj.GetAllPlayers() {

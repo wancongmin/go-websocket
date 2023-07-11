@@ -58,28 +58,27 @@ func CreateRoom(request impl.IRequest, userId uint32) (GameRoom, error) {
 		resp.Msg = "你有进行中的游戏，请先退出当前游戏"
 		resp.Data = runPlayer
 		comm.SendMsg(conn, 205, resp)
-		return room, err
+		return room, errors.New("你有进行中的游戏，请先退出当前游戏")
 	}
 	if roomRes.HidingSecond == 0 {
 		resp.Code = 0
 		resp.Msg = "请填写正确的躲藏时间"
 		comm.SendMsg(conn, 205, resp)
-		return room, err
+		return room, errors.New("请填写正确的躲藏时间")
 	}
 	if roomRes.ArrestSecond == 0 {
 		resp.Code = 0
 		resp.Msg = "请填写正确的抓捕时间"
 		comm.SendMsg(conn, 205, resp)
-		return room, err
+		return room, errors.New("请填写正确的抓捕时间")
 	}
 	if len(roomRes.Coordinate) < 3 {
 		resp.Code = 0
 		resp.Msg = "至少设置3个范围坐标"
 		comm.SendMsg(conn, 205, resp)
-		return room, err
+		return room, errors.New("至少设置3个范围坐标")
 	}
 	// 获取随机数字
-
 	var roomId string
 	for {
 		roomId = utils.RandNumString(4)
