@@ -156,18 +156,15 @@ func (s *Server) MessageQueue() {
 	key := "message_queue"
 	ticker := time.NewTicker(1 * time.Second)
 	for _ = range ticker.C {
-		// 这里处理定时器周期性触发后的逻辑
 		result, err := redis.Redis.LPop(key).Result()
 		if err != nil {
 			continue
 		}
-		log.Println("result", result)
 		var queueMsg comm.QueueMsg
 		err = json.Unmarshal([]byte(result), &queueMsg)
 		if err != nil {
 			mylog.Error("获取redis message queue Unmarshal err:" + err.Error())
 		}
-		log.Printf("queueMsg:%+v", queueMsg)
 		for _, toId := range queueMsg.ToUserIds {
 			msg := comm.ResponseMsg{
 				Code:       1,

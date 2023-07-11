@@ -119,7 +119,7 @@ func CreateRoom(request impl.IRequest, userId uint32) (GameRoom, error) {
 	//	return room, err
 	//}
 	//room.ChatRoom = chatRoomId
-	var player = GamePlayer{
+	var player = Player{
 		UserId:     userId,
 		RoomId:     roomId,
 		Role:       0,
@@ -220,7 +220,7 @@ func CloseRoom(room GameRoom, errorMsg string) {
 		return
 	}
 	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=?", room.Id, 0).
-		Updates(GamePlayer{Status: 4, ErrorMsg: errorMsg}).Error; err != nil {
+		Updates(Player{Status: 4, ErrorMsg: errorMsg}).Error; err != nil {
 		tx.Rollback()
 		return
 	}
@@ -232,16 +232,16 @@ func CloseRoom(room GameRoom, errorMsg string) {
 		Msg:  "游戏关闭",
 		Data: map[string]string{"roomId": room.Id},
 	}
-	SendMsgToPlayers(room.Id, 0, []GamePlayer{}, 209, msg)
+	SendMsgToPlayers(room.Id, 0, []Player{}, 209, msg)
 }
 
 // StartArrest 开始抓捕
 func StartArrest(room GameRoom) {
-	db.Db.Table("fa_game_room").Where("id = ?", room.Id).Updates(GamePlayer{Status: 2})
+	db.Db.Table("fa_game_room").Where("id = ?", room.Id).Updates(Player{Status: 2})
 	ClearRoomCache(room.Id)
 }
 
-func Referee(roomId string, room GameRoom, winRole int, players []GamePlayer) {
+func Referee(roomId string, room GameRoom, winRole int, players []Player) {
 	var err error
 	if room.Id == "" {
 		room, err = GetRoomCache(roomId)
@@ -263,12 +263,12 @@ func Referee(roomId string, room GameRoom, winRole int, players []GamePlayer) {
 		return
 	}
 	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=? AND role = ?", room.Id, 0, winRole).
-		Updates(GamePlayer{Status: 1}).Error; err != nil {
+		Updates(Player{Status: 1}).Error; err != nil {
 		tx.Rollback()
 		return
 	}
 	if err = tx.Table("fa_game_player").Where("room_id = ? AND status=? AND role =?", room.Id, 0, loseRole).
-		Updates(GamePlayer{Status: 2}).Error; err != nil {
+		Updates(Player{Status: 2}).Error; err != nil {
 		tx.Rollback()
 		return
 	}

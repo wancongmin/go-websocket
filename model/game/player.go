@@ -10,7 +10,7 @@ import (
 	"websocket/model/comm"
 )
 
-type GamePlayer struct {
+type Player struct {
 	Id             int       `gorm:"id"`
 	UserId         uint32    `gorm:"user_id"`
 	RoomId         string    `gorm:"room_id"`
@@ -34,8 +34,8 @@ type EnterRoomRespMsg struct {
 }
 
 // GetRunningPlayer 获取玩家信息
-func GetRunningPlayer(uid uint32) (GamePlayer, error) {
-	var player GamePlayer
+func GetRunningPlayer(uid uint32) (Player, error) {
+	var player Player
 	err := db.Db.Table("fa_game_player").
 		Where("user_id = ? AND status = ? ", uid, 0).
 		First(&player).Error
@@ -45,9 +45,9 @@ func GetRunningPlayer(uid uint32) (GamePlayer, error) {
 }
 
 // GetRunningPlayersByRoomId 获取房间内所有玩家列表
-func GetRunningPlayersByRoomId(roomId string) []GamePlayer {
+func GetRunningPlayersByRoomId(roomId string) []Player {
 	key := "gameRoomPlayers:roomId_" + roomId
-	var players []GamePlayer
+	var players []Player
 	result, err := redis.Redis.Get(key).Result()
 	if err == nil {
 		_ = json.Unmarshal([]byte(result), &players)
@@ -69,9 +69,16 @@ func ClearPlayersCache(roomId string) {
 	redis.Redis.Del(key)
 }
 
+// ChangeRoleTwo 变羊
+func ChangeRoleTwo(roomId string, userId uint32) {
+	db.Db.Table("fa_game_player").
+		Where("room_id = ? AND user_id = ? AND status = ?", roomId, userId, 0).Updates(Player{Role: 2})
+	ClearPlayersCache(roomId)
+}
+
 // GetOlinePlayers 获取有定位信息的用户数据
-func GetOlinePlayers(roomId string) []GamePlayer {
-	var resPlayers []GamePlayer
+func GetOlinePlayers(roomId string) []Player {
+	var resPlayers []Player
 	players := GetRunningPlayersByRoomId(roomId)
 	for _, player := range players {
 		// 用户不在线
@@ -91,9 +98,9 @@ func GetOlinePlayers(roomId string) []GamePlayer {
 }
 
 // ErrorOutRoom 异常退出房间
-func ErrorOutRoom(player GamePlayer, errorMsg string) {
+func ErrorOutRoom(player Player, errorMsg string) {
 	db.Db.Table("fa_game_player").
-		Where("id = ? AND status = ?", player.Id, 0).Updates(GamePlayer{Status: 6, ErrorMsg: errorMsg})
+		Where("id = ? AND status = ?", player.Id, 0).Updates(Player{Status: 6, ErrorMsg: errorMsg})
 	ClearPlayersCache(player.RoomId)
 	msg := comm.ResponseMsg{
 		Code: 1,
@@ -113,7 +120,7 @@ func SendMessage(uid, msgId uint32, msg comm.ResponseMsg) {
 }
 
 // SendMsgToPlayers 给玩家发消息
-func SendMsgToPlayers(roomId string, role int, players []GamePlayer, msgId uint32, msg comm.ResponseMsg) {
+func SendMsgToPlayers(roomId string, role int, players []Player, msgId uint32, msg comm.ResponseMsg) {
 	if len(players) == 0 {
 		players = GetRunningPlayersByRoomId(roomId)
 	}
@@ -126,8 +133,8 @@ func SendMsgToPlayers(roomId string, role int, players []GamePlayer, msgId uint3
 
 }
 
-// 获取角色数量
-func GetRuleNum(players []GamePlayer) (ruleOneNum, ruleTowNum int) {
+// GetRuleNum 获取角色数量
+func GetRuleNum(players []Player) (ruleOneNum, ruleTowNum int) {
 	var roleOneNum, roleTowNum int
 	for _, player := range players {
 		if player.Role == 1 {

@@ -1,8 +1,10 @@
 package test
 
 import (
+	"fmt"
 	"github.com/go-ini/ini"
 	"log"
+	"math"
 	"testing"
 )
 
@@ -21,10 +23,5 @@ func TestOther(t *testing.T) {
 }
 
 func TestGetPlayersByRoomId(t *testing.T) {
-	var roleOneNum, roleTowNum int
-	roleOneNum++
-	roleOneNum++
-	roleTowNum++
-	log.Println(roleOneNum)
-	log.Println(roleTowNum)
+	fmt.Println(math.Ceil(5 / 2))
 }

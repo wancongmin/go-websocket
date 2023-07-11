@@ -14,9 +14,9 @@ type RoomChecker struct {
 	interval        time.Duration //  Heartbeat detection interval(检测时间间隔)
 	quitChan        chan bool     // Quit signal(退出信号)
 	GameRoom        GameRoom
-	lastErrorTime   int                    //上次异常时间
-	Players         map[uint32]*GamePlayer //当前在线的玩家集合
-	pLock           sync.RWMutex           //保护Players的互斥读写机制
+	lastErrorTime   int                //上次异常时间
+	Players         map[uint32]*Player //当前在线的玩家集合
+	pLock           sync.RWMutex       //保护Players的互斥读写机制
 	CloseRoomHandle func(room GameRoom, errorMsg string)
 	EndRoomHandle   func(room GameRoom)
 }
@@ -26,7 +26,7 @@ func NewGameRoomChecker(interval time.Duration, room GameRoom) *RoomChecker {
 		interval: interval,
 		quitChan: make(chan bool),
 		GameRoom: room,
-		Players:  make(map[uint32]*GamePlayer),
+		Players:  make(map[uint32]*Player),
 	}
 
 	return roomChecker
@@ -72,6 +72,8 @@ func (h *RoomChecker) check() {
 	if !h.CheckRoomPlayers(room) {
 		return
 	}
+	//定时检查投票信息
+
 	//定时推送房间信息
 	h.sendRoomInfoToPlayers(room)
 }
@@ -87,14 +89,14 @@ func (h *RoomChecker) Stop() {
 }
 
 // SuperPlayer 提供添加一个玩家的的功能，将玩家添加进玩家信息表Players
-func (h *RoomChecker) SuperPlayer(player *GamePlayer) {
+func (h *RoomChecker) SuperPlayer(player *Player) {
 	h.pLock.Lock()
 	h.Players[player.UserId] = player
 	h.pLock.Unlock()
 }
 
 // GetPlayerByUid 通过玩家ID 获取对应玩家信息
-func (h *RoomChecker) GetPlayerByUid(uid uint32) *GamePlayer {
+func (h *RoomChecker) GetPlayerByUid(uid uint32) *Player {
 	h.pLock.RLock()
 	defer h.pLock.RUnlock()
 
