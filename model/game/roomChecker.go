@@ -13,15 +13,15 @@ import (
 type RoomChecker struct {
 	interval        time.Duration //  Heartbeat detection interval(检测时间间隔)
 	quitChan        chan bool     // Quit signal(退出信号)
-	GameRoom        GameRoom
+	GameRoom        Room
 	lastErrorTime   int                //上次异常时间
 	Players         map[uint32]*Player //当前在线的玩家集合
 	pLock           sync.RWMutex       //保护Players的互斥读写机制
-	CloseRoomHandle func(room GameRoom, errorMsg string)
-	EndRoomHandle   func(room GameRoom)
+	CloseRoomHandle func(room Room, errorMsg string)
+	EndRoomHandle   func(room Room)
 }
 
-func NewGameRoomChecker(interval time.Duration, room GameRoom) *RoomChecker {
+func NewGameRoomChecker(interval time.Duration, room Room) *RoomChecker {
 	roomChecker := &RoomChecker{
 		interval: interval,
 		quitChan: make(chan bool),
@@ -104,7 +104,7 @@ func (h *RoomChecker) GetPlayerByUid(uid uint32) *Player {
 }
 
 // CheckRoomPlayers 检查房间用户
-func (h *RoomChecker) CheckRoomPlayers(room GameRoom) bool {
+func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 	players := GetRunningPlayersByRoomId(room.Id)
 	if len(players) == 0 {
 		log.Printf("【Game】房间没有玩家，游戏结束,roomId:%s", room.Id)
@@ -160,11 +160,13 @@ func (h *RoomChecker) CheckRoomPlayers(room GameRoom) bool {
 			return false
 		}
 	}
+	// 检查投票信息
+	CheckVoteByRoomId(h.GameRoom.Id)
 	return true
 }
 
 // 给所有玩家发送房间消息
-func (h *RoomChecker) sendRoomInfoToPlayers(room GameRoom) {
+func (h *RoomChecker) sendRoomInfoToPlayers(room Room) {
 	data := make(map[string]interface{})
 	data["Room"] = room
 	data["OnlinePlayers"] = GetOlinePlayers(room.Id) //在线玩家
@@ -176,12 +178,12 @@ func (h *RoomChecker) sendRoomInfoToPlayers(room GameRoom) {
 	var successNum = 0
 	for _, player := range players {
 		data["Self"] = player
-		msg := comm.ResponseMsg{
-			Code: 1,
-			Msg:  "success",
-			Data: data,
-		}
-		SendMessage(player.UserId, 206, msg)
+		//msg := comm.ResponseMsg{
+		//	Code: 1,
+		//	Msg:  "success",
+		//	Data: data,
+		//}
+		//SendMessage(player.UserId, 206, msg)
 		successNum++
 	}
 	startArrestTime := time.Unix(room.StartArrestTime, 0).Format("2006-01-02 15:04:05")

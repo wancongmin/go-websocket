@@ -34,14 +34,35 @@ type EnterRoomRespMsg struct {
 }
 
 // GetRunningPlayer 获取玩家信息
-func GetRunningPlayer(uid uint32) (Player, error) {
-	var player Player
-	err := db.Db.Table("fa_game_player").
+func GetRunningPlayer(uid uint32) []Player {
+	var players []Player
+	db.Db.Table("fa_game_player").
 		Where("user_id = ? AND status = ? ", uid, 0).
-		First(&player).Error
-	log.Println("数据库err", err)
-	log.Printf("player:%+v", player)
-	return player, nil
+		Find(&players)
+	return players
+}
+
+// ExitRoom 退出房间
+func ExitRoom(player Player) error {
+	room, err := GetRoomCache(player.RoomId)
+	if err != nil {
+		return err
+	}
+	if room.MasterId == player.UserId {
+		var newMaster Player
+		db.Db.Table("fa_game_player").
+			Where("room_id = ? AND status = ? AND user_id <> ?", player.RoomId, 0, player.UserId).
+			First(&newMaster)
+		db.Db.Table("fa_game_room").
+			Where("room_id = ? ", room.Id).
+			Updates(Room{MasterId: newMaster.UserId})
+		ClearRoomCache(room.Id)
+	}
+	db.Db.Table("fa_game_player").
+		Where("id = ?", player.Id).
+		Updates(Player{Status: 3})
+	ClearPlayersCache(player.RoomId)
+	return nil
 }
 
 // GetRunningPlayersByRoomId 获取房间内所有玩家列表
@@ -69,10 +90,20 @@ func ClearPlayersCache(roomId string) {
 	redis.Redis.Del(key)
 }
 
-// ChangeRoleTwo 变羊
-func ChangeRoleTwo(roomId string, userId uint32) {
-	db.Db.Table("fa_game_player").
-		Where("room_id = ? AND user_id = ? AND status = ?", roomId, userId, 0).Updates(Player{Role: 2})
+// ChangeRoleOne 变狼
+func ChangeRoleOne(roomId string, userId uint32) {
+	result := db.Db.Table("fa_game_player").
+		Where("room_id = ? AND user_id = ? AND status = ?", roomId, userId, 0).Updates(Player{Role: 1})
+	if result.RowsAffected > 0 {
+		user := comm.GetUserById(userId)
+		//发送通知消息
+		msg := comm.ResponseMsg{
+			Code:       1,
+			FromUserId: "admin",
+			Msg:        user.Nickname + " 被抓，成了狼",
+		}
+		SendMsgToPlayers(roomId, 0, []Player{}, 220, msg)
+	}
 	ClearPlayersCache(roomId)
 }
 

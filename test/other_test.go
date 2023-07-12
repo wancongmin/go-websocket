@@ -1,14 +1,22 @@
 package test
 
 import (
-	"fmt"
 	"github.com/go-ini/ini"
 	"log"
-	"math"
 	"testing"
+	"websocket/config"
+	"websocket/lib/db"
+	"websocket/lib/redis"
+	"websocket/model/comm"
 )
 
 var ConfFile *ini.File
+
+func init() {
+	config.InitConf("../config/conf.ini")
+	db.InitDb()
+	redis.InitRedis()
+}
 
 // 使用代理请求
 func TestOther(t *testing.T) {
@@ -23,5 +31,6 @@ func TestOther(t *testing.T) {
 }
 
 func TestGetPlayersByRoomId(t *testing.T) {
-	fmt.Println(math.Ceil(5 / 2))
+	user := comm.GetUserById(588)
+	log.Printf("user:%+v", user)
 }

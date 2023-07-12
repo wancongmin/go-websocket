@@ -86,7 +86,7 @@ func (r *myHeartBeatRouter) Handle(request impl.IRequest) {
 
 func main() {
 	defer utils.CustomError()
-	config.InitConf()
+	config.InitConf("")
 	db.InitDb()
 	redis.InitRedis()
 	utils.InitGlobalConf()
@@ -102,7 +102,7 @@ func main() {
 	s.SetConnStop(DoConnectionLost)
 
 	// Start heartbeating detection. (启动心跳检测)
-	s.StartHeartBeatWithOption(3*time.Second, &impl.HeartBeatOption{
+	s.StartHeartBeatWithOption(5*time.Second, &impl.HeartBeatOption{
 		MakeMsg:          myHeartBeatMsg,
 		OnRemoteNotAlive: myOnRemoteNotAlive,
 		Router:           &myHeartBeatRouter{},

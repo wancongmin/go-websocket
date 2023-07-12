@@ -154,3 +154,24 @@ func GetUserType(uid uint32) UserType {
 	}
 	return userType
 }
+
+func GetUserById(uid uint32) User {
+	key := "UserInfo:uid_" + fmt.Sprintf("%v", uid)
+	user := User{}
+	result, err := redis.Redis.Get(key).Result()
+	if err == nil {
+		err := json.Unmarshal([]byte(result), &user)
+		if err != nil {
+			return user
+		}
+	} else {
+		db.Db.Table("fa_user").
+			Where("id = ?", uid).
+			First(&user)
+		marshal, err := json.Marshal(user)
+		if err == nil {
+			redis.Redis.Set(key, marshal, 120*time.Second)
+		}
+	}
+	return user
+}

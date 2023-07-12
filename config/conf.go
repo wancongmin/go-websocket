@@ -8,9 +8,12 @@ import (
 
 var ConfFile *ini.File
 
-func InitConf() {
+func InitConf(file string) {
 	var err error
-	ConfFile, err = ini.Load("config/conf.ini")
+	if file == "" {
+		file = "config/conf.ini"
+	}
+	ConfFile, err = ini.Load(file)
 	if err != nil {
 		panic("配置加载失败")
 	}

@@ -27,8 +27,8 @@ type VoteLog struct {
 	CreateTime int64  `gorm:"create_time"`
 }
 
-// CheckVote 检查投票
-func CheckVote(roomId string) {
+// CheckVoteByRoomId 检查投票
+func CheckVoteByRoomId(roomId string) {
 	var votes []Vote
 	err := db.Db.Table("fa_game_vote").
 		Where("room_id = ? AND status = ?", roomId, 0).
@@ -41,14 +41,18 @@ func CheckVote(roomId string) {
 	}
 	players := GetRunningPlayersByRoomId(roomId)
 	for _, vote := range votes {
-		if vote.EndTime > time.Now().Unix() {
-			continue
-		}
-		// 获取投票人数
-		var approveCount int64
-		db.Db.Table("fa_game_vote_log").Where("vote_id = ? AND status = ?", vote.Id, 1).Count(&approveCount)
-		if float64(approveCount) > math.Ceil(float64(len(players))/2) {
-			ChangeRoleTwo(vote.RoomId, vote.ToUserId)
-		}
+		CheckVote(vote, players)
+	}
+}
+
+func CheckVote(vote Vote, players []Player) {
+	if vote.EndTime > time.Now().Unix() {
+		return
+	}
+	// 获取投票人数
+	var approveCount int64
+	db.Db.Table("fa_game_vote_log").Where("vote_id = ? AND status = ?", vote.Id, 1).Count(&approveCount)
+	if float64(approveCount) > math.Ceil(float64(len(players))/2) {
+		ChangeRoleOne(vote.RoomId, vote.ToUserId)
 	}
 }

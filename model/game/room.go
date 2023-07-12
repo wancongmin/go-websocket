@@ -18,7 +18,7 @@ import (
 )
 
 // 房间结构
-type GameRoom struct {
+type Room struct {
 	Id              string `gorm:"id"`
 	UserId          uint32 `gorm:"user_id"`
 	MasterId        uint32 `gorm:"master_id"`
@@ -39,8 +39,8 @@ type CreateRoomReq struct {
 	Coordinate   []map[string]interface{} `json:"coordinate"`
 }
 
-func CreateRoom(request impl.IRequest, userId uint32) (GameRoom, error) {
-	var room GameRoom
+func CreateRoom(request impl.IRequest, userId uint32) (Room, error) {
+	var room Room
 	roomRes := CreateRoomReq{}
 	var resp comm.ResponseMsg
 	resp.MsgId = 205
@@ -51,14 +51,6 @@ func CreateRoom(request impl.IRequest, userId uint32) (GameRoom, error) {
 		resp.Msg = "请求参数不正确"
 		comm.SendMsg(conn, 205, resp)
 		return room, err
-	}
-	runPlayer, _ := GetRunningPlayer(userId)
-	if runPlayer.Id != 0 {
-		resp.Code = 0
-		resp.Msg = "你有进行中的游戏，请先退出当前游戏"
-		resp.Data = runPlayer
-		comm.SendMsg(conn, 205, resp)
-		return room, errors.New("你有进行中的游戏，请先退出当前游戏")
 	}
 	if roomRes.HidingSecond == 0 {
 		resp.Code = 0
@@ -77,6 +69,13 @@ func CreateRoom(request impl.IRequest, userId uint32) (GameRoom, error) {
 		resp.Msg = "至少设置3个范围坐标"
 		comm.SendMsg(conn, 205, resp)
 		return room, errors.New("至少设置3个范围坐标")
+	}
+	runPlayers := GetRunningPlayer(userId)
+	if len(runPlayers) > 0 {
+		//退出其他游戏房间
+		for _, runPlayer := range runPlayers {
+			_ = ExitRoom(runPlayer)
+		}
 	}
 	// 获取随机数字
 	var roomId string
@@ -150,9 +149,9 @@ type CreateChatRoomResp struct {
 	Data string
 }
 
-func GetRoomCache(roomId string) (GameRoom, error) {
+func GetRoomCache(roomId string) (Room, error) {
 	key := "gameRoom:roomId_" + roomId
-	var room GameRoom
+	var room Room
 	result, err := redis.Redis.Get(key).Result()
 	if err == nil {
 		err = json.Unmarshal([]byte(result), &room)
@@ -210,7 +209,7 @@ func CreateChatRoom(url string, userId uint32, groupname, desc string) (string, 
 }
 
 // CloseRoom 关闭游戏
-func CloseRoom(room GameRoom, errorMsg string) {
+func CloseRoom(room Room, errorMsg string) {
 	room.Status = 4
 	room.CloseTime = time.Now().Unix()
 	tx := db.Db.Begin()
@@ -236,12 +235,12 @@ func CloseRoom(room GameRoom, errorMsg string) {
 }
 
 // StartArrest 开始抓捕
-func StartArrest(room GameRoom) {
+func StartArrest(room Room) {
 	db.Db.Table("fa_game_room").Where("id = ?", room.Id).Updates(Player{Status: 2})
 	ClearRoomCache(room.Id)
 }
 
-func Referee(roomId string, room GameRoom, winRole int, players []Player) {
+func Referee(roomId string, room Room, winRole int, players []Player) {
 	var err error
 	if room.Id == "" {
 		room, err = GetRoomCache(roomId)
@@ -293,7 +292,7 @@ func Referee(roomId string, room GameRoom, winRole int, players []Player) {
 // EndRoom 游戏结束
 // 游戏时间到，有猎物则猎物赢
 // 全部为猎人-猎人赢/全部为猎物-猎物赢
-func EndRoom(room GameRoom) {
+func EndRoom(room Room) {
 	players := GetRunningPlayersByRoomId(room.Id)
 	isPreyWin := false //是否猎物赢
 	for _, player := range players {
