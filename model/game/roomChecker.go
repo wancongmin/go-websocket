@@ -172,6 +172,7 @@ func (h *RoomChecker) sendRoomInfoToPlayers(room GameRoom) {
 	ruleOneNum, ruleTowNum := GetRuleNum(players)
 	data["RuleOneNum"] = ruleOneNum
 	data["RuleTowNum"] = ruleTowNum
+	data["playerNum"] = len(players)
 	var successNum = 0
 	for _, player := range players {
 		data["Self"] = player
