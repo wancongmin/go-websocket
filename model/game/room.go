@@ -110,14 +110,14 @@ func CreateRoom(request impl.IRequest, userId uint32) (Room, error) {
 		mylog.Error("配置参数错误:" + err.Error())
 		return room, err
 	}
-	//chatRoomId, err := CreateChatRoom(conf.WebAdmin+"/app/other/createGroup", userId, "定位捉迷藏", "定位捉迷藏游戏")
-	//if err != nil {
-	//	resp.Code = 0
-	//	resp.Msg = err.Error()
-	//	comm.SendMsg(request, 205, resp)
-	//	return room, err
-	//}
-	//room.ChatRoom = chatRoomId
+	chatRoomId, err := CreateChatRoom(conf.WebAdmin+"/app/other/createGroup", userId, "定位捉迷藏", "定位捉迷藏游戏")
+	if err != nil {
+		resp.Code = 0
+		resp.Msg = err.Error()
+		comm.SendMsg(conn, 205, resp)
+		return room, err
+	}
+	room.ChatRoom = chatRoomId
 	var player = Player{
 		UserId:     userId,
 		RoomId:     roomId,
