@@ -90,23 +90,6 @@ func ClearPlayersCache(roomId string) {
 	redis.Redis.Del(key)
 }
 
-// ChangeRoleOne 变狼
-func ChangeRoleOne(roomId string, userId uint32) {
-	result := db.Db.Table("fa_game_player").
-		Where("room_id = ? AND user_id = ? AND status = ?", roomId, userId, 0).Updates(Player{Role: 1})
-	if result.RowsAffected > 0 {
-		user := comm.GetUserById(userId)
-		//发送通知消息
-		msg := comm.ResponseMsg{
-			Code:       1,
-			FromUserId: "admin",
-			Msg:        user.Nickname + " 被抓，成了狼",
-		}
-		SendMsgToPlayers(roomId, 0, []Player{}, 220, msg)
-	}
-	ClearPlayersCache(roomId)
-}
-
 // GetOlinePlayers 获取有定位信息的用户数据
 func GetOlinePlayers(roomId string) []Player {
 	var resPlayers []Player

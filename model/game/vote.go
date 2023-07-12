@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 	"websocket/lib/db"
+	"websocket/model/comm"
 )
 
 // Vote 房间结构
@@ -51,8 +52,27 @@ func CheckVote(vote Vote, players []Player) {
 	}
 	// 获取投票人数
 	var approveCount int64
+	var voteStatus int
 	db.Db.Table("fa_game_vote_log").Where("vote_id = ? AND status = ?", vote.Id, 1).Count(&approveCount)
 	if float64(approveCount) > math.Ceil(float64(len(players))/2) {
-		ChangeRoleOne(vote.RoomId, vote.ToUserId)
+		voteStatus = 1
+		result := db.Db.Table("fa_game_player").
+			Where("room_id = ? AND user_id = ? AND status = ?", vote.RoomId, vote.ToUserId, 0).Updates(Player{Role: 1})
+		if result.RowsAffected > 0 {
+			user := comm.GetUserById(vote.ToUserId)
+			//发送通知消息
+			msg := comm.ResponseMsg{
+				Code:       1,
+				FromUserId: "admin",
+				Msg:        user.Nickname + " 被抓，成了狼",
+			}
+			SendMsgToPlayers(vote.RoomId, 0, []Player{}, 220, msg)
+		}
+		ClearPlayersCache(vote.RoomId)
+	} else {
+		voteStatus = 2
 	}
+	db.Db.Table("fa_game_vote").
+		Where("id = ?", vote.Id).
+		Updates(Vote{Status: voteStatus, EndTime: time.Now().Unix()})
 }
