@@ -54,7 +54,7 @@ func ExitRoom(player Player) error {
 			Where("room_id = ? AND status = ? AND user_id <> ?", player.RoomId, 0, player.UserId).
 			First(&newMaster)
 		db.Db.Table("fa_game_room").
-			Where("room_id = ? ", room.Id).
+			Where("id = ? ", room.Id).
 			Updates(Room{MasterId: newMaster.UserId})
 		ClearRoomCache(room.Id)
 	}

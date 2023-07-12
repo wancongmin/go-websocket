@@ -90,7 +90,7 @@ func main() {
 	db.InitDb()
 	redis.InitRedis()
 	utils.InitGlobalConf()
-	//创建server句柄，使用zinx的api
+	//创建server句柄，使用api
 	s := service.NewServer("funParty")
 	//s.AddRouter(100, &router.PingRouter{})
 	s.AddRouter(101, &router.LocationRouter{})
