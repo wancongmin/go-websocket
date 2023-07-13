@@ -167,8 +167,12 @@ func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 func (h *RoomChecker) sendRoomInfoToPlayers(room Room) {
 	data := make(map[string]interface{})
 	data["Room"] = room
-	data["OnlinePlayers"] = GetOlinePlayers(room.Id) //在线玩家
-	players := GetRunningPlayersByRoomId(room.Id)    //所有玩家
+	if room.Status == 1 {
+		data["OnlinePlayers"] = []Player{}
+	} else {
+		data["OnlinePlayers"] = GetOlinePlayers(room.Id) //在线玩家
+	}
+	players := GetRunningPlayersByRoomId(room.Id) //所有玩家
 	ruleOneNum, ruleTowNum := GetRuleNum(players)
 	data["RuleOneNum"] = ruleOneNum
 	data["RuleTowNum"] = ruleTowNum
