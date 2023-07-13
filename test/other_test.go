@@ -31,15 +31,16 @@ func TestOther(t *testing.T) {
 }
 
 func TestGetPlayersByRoomId(t *testing.T) {
-	var players []game.Player
-	db.Db.Debug().Table("fa_game_player p").
+	var winPlayers []game.Player
+	// 获胜狼的列表
+	db.Db.Table("fa_game_player p").
 		Select("p.user_id,p.room_id,p.role,p.status,count(*) cn").
 		Joins("left join fa_game_vote v on v.room_id = p.room_id and v.user_id=p.user_id and v.status=1").
-		Where("p.room_id = ? AND p.role = ? AND p.status = ?", 9610, 1, 1).
+		Where("p.room_id = ? AND p.role = ? AND p.status = ?", 9595, 1, 1).
 		Group("user_id").
 		Order("cn desc").
 		Limit(3).
-		Find(&players)
-	log.Printf("players:%+v", players)
+		Find(&winPlayers)
+	log.Printf("players:%+v", winPlayers)
 	//fmt.Printf("result:%+v", votes)
 }

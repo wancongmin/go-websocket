@@ -293,7 +293,7 @@ func Referee(roomId string, room Room, winRole int, players []Player) {
 			Group("user_id").
 			Order("cn desc").
 			Limit(3).
-			Find(winPlayers)
+			Find(&winPlayers)
 	} else {
 		// 获胜羊的列表
 		for _, player := range players {
