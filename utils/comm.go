@@ -43,7 +43,7 @@ func Thumb(url, w string) string {
 // 圆角缩略图
 func RoundThumb(url, r string) string {
 	url = CdnUrl(url)
-	return url + "/rounded-corners,r_" + r
+	return url + "/rounded-corners,r_" + r + "/format,png"
 }
 
 var CHARS = []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
