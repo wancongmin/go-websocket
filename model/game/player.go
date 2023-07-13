@@ -86,7 +86,7 @@ func GetRunningPlayersByRoomId(roomId string) []Player {
 }
 
 func ClearPlayersCache(roomId string) {
-	key := "gameRoom:roomId_" + roomId
+	key := "gameRoomPlayers:roomId_" + roomId
 	redis.Redis.Del(key)
 }
 

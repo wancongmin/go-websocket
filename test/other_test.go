@@ -36,7 +36,7 @@ func TestGetPlayersByRoomId(t *testing.T) {
 	db.Db.Table("fa_game_player p").
 		Select("p.user_id,p.room_id,p.role,p.status,count(*) cn").
 		Joins("left join fa_game_vote v on v.room_id = p.room_id and v.user_id=p.user_id and v.status=1").
-		Where("p.room_id = ? AND p.role = ? AND p.status = ?", 9595, 1, 1).
+		Where("p.room_id = ? AND p.role = ? AND p.status = ?", 6051, 1, 1).
 		Group("user_id").
 		Order("cn desc").
 		Limit(3).
