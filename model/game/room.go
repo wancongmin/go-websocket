@@ -80,6 +80,7 @@ func CreateRoom(request impl.IRequest, userId uint32) (Room, error) {
 	// 获取随机数字
 	var roomId string
 	for {
+		room = Room{}
 		roomId = utils.RandNumString(4)
 		db.Db.Table("fa_game_room").
 			Where("id = ?", roomId).
