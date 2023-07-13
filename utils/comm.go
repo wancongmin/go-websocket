@@ -41,14 +41,9 @@ func Thumb(url, w string) string {
 }
 
 // 圆角缩略图
-func RoundThumb(url, w, r string) string {
+func RoundThumb(url, r string) string {
 	url = CdnUrl(url)
-	if r != "0" {
-		url = url + "?x-oss-process=image/resize,w_" + w + ",m_lfit/rounded-corners,r_" + r
-	} else {
-		url = url + "?x-oss-process=image/resize,w_" + w + ",m_lfit"
-	}
-	return url
+	return url + "/rounded-corners,r_" + r
 }
 
 var CHARS = []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",

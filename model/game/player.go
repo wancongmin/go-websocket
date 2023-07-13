@@ -8,6 +8,7 @@ import (
 	"websocket/lib/db"
 	"websocket/lib/redis"
 	"websocket/model/comm"
+	"websocket/utils"
 )
 
 type Player struct {
@@ -105,6 +106,7 @@ func GetOlinePlayers(roomId string) []Player {
 		if err != nil {
 			continue
 		}
+		user.Avatar = utils.RoundThumb(user.Avatar, "50")
 		player.User = user
 		resPlayers = append(resPlayers, player)
 	}

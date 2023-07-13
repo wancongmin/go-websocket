@@ -69,7 +69,7 @@ func SetUserLocation(request User) {
 			}
 		}
 		//user.Avatar = utils.CdnUrl(user.Avatar) + "?x-oss-process=image/resize,w_100,m_lfit"
-		user.Avatar = utils.RoundThumb(user.Avatar, "100", "0")
+		user.Avatar = utils.Thumb(user.Avatar, "100")
 		marshal, err := json.Marshal(user)
 		if err != nil {
 			return
@@ -168,7 +168,6 @@ func GetUserById(uid uint32) User {
 		db.Db.Table("fa_user").
 			Where("id = ?", uid).
 			First(&user)
-		user.Avatar = utils.RoundThumb(user.Avatar, "100", "0")
 		marshal, err := json.Marshal(user)
 		if err == nil {
 			redis.Redis.Set(key, marshal, 120*time.Second)
