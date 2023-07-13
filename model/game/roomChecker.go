@@ -175,15 +175,16 @@ func (h *RoomChecker) sendRoomInfoToPlayers(room Room) {
 	data["RuleOneNum"] = ruleOneNum
 	data["RuleTowNum"] = ruleTowNum
 	data["playerNum"] = len(players)
+	data["finishVoteNum"] = GetFinishVoteNum(room.Id)
 	var successNum = 0
 	for _, player := range players {
 		data["Self"] = player
-		msg := comm.ResponseMsg{
-			Code: 1,
-			Msg:  "success",
-			Data: data,
-		}
-		SendMessage(player.UserId, 206, msg)
+		//msg := comm.ResponseMsg{
+		//	Code: 1,
+		//	Msg:  "success",
+		//	Data: data,
+		//}
+		//SendMessage(player.UserId, 206, msg)
 		successNum++
 	}
 	startArrestTime := time.Unix(room.StartArrestTime, 0).Format("2006-01-02 15:04:05")

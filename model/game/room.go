@@ -84,6 +84,7 @@ func CreateRoom(request impl.IRequest, userId uint32) (Room, error) {
 		db.Db.Table("fa_game_room").
 			Where("id = ?", roomId).
 			First(&room)
+		log.Printf("创建room:%+v", room)
 		if room.Id == "" {
 			break
 		}
@@ -240,6 +241,7 @@ func StartArrest(room Room) {
 	ClearRoomCache(room.Id)
 }
 
+// Referee 游戏结果裁决
 func Referee(roomId string, room Room, winRole int, players []Player) {
 	var err error
 	if room.Id == "" {
@@ -274,18 +276,44 @@ func Referee(roomId string, room Room, winRole int, players []Player) {
 	tx.Commit()
 	ClearRoomCache(roomId)
 	ClearPlayersCache(roomId)
+	winnerData := make(map[string]interface{}) //获得胜利玩家信息
+	winnerData["winRole"] = winRole
+	//var winPlayers []Player
+	var winPlayers []*Player
+	if winRole == 1 {
+		// 获胜狼的列表
+		db.Db.Table("fa_game_player p").
+			Select("p.user_id,p.room_id,p.role,p.status,count(*) cn").
+			Joins("left join fa_game_vote v on v.room_id = p.room_id and v.user_id=p.user_id and v.status=1").
+			Where("p.room_id = ? AND p.role = ? AND p.status = ?", roomId, 1, 1).
+			Group("user_id").
+			Order("cn desc").
+			Limit(3).
+			Find(winPlayers)
+	} else {
+		// 获胜羊的列表
+		for _, player := range players {
+			if player.Role == 2 {
+				winPlayers = append(winPlayers, &player)
+			}
+		}
+	}
+	for _, player := range winPlayers {
+		player.User = comm.GetUserById(player.UserId)
+	}
+	winnerData["winPlayers"] = winPlayers
 	msg := comm.ResponseMsg{
 		Code: 1,
-		Msg:  "恭喜领赢得本场游戏",
-		Data: room,
+		Msg:  "游戏结束",
+		Data: winnerData,
 	}
-	SendMsgToPlayers(room.Id, winRole, players, 208, msg)
-	msg = comm.ResponseMsg{
-		Code: 1,
-		Msg:  "游戏失败，请再接再厉！",
-		Data: room,
-	}
-	SendMsgToPlayers(room.Id, loseRole, players, 208, msg)
+	SendMsgToPlayers(room.Id, 0, players, 208, msg)
+	//msg = comm.ResponseMsg{
+	//	Code: 1,
+	//	Msg:  "游戏失败，请再接再厉！",
+	//	Data: room,
+	//}
+	//SendMsgToPlayers(room.Id, loseRole, players, 208, msg)
 	log.Printf("【Game】游戏结束,roomId:%s,winRole:%d", room.Id, winRole)
 }
 

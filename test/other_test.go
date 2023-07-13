@@ -7,7 +7,7 @@ import (
 	"websocket/config"
 	"websocket/lib/db"
 	"websocket/lib/redis"
-	"websocket/model/comm"
+	"websocket/model/game"
 )
 
 var ConfFile *ini.File
@@ -31,6 +31,15 @@ func TestOther(t *testing.T) {
 }
 
 func TestGetPlayersByRoomId(t *testing.T) {
-	user := comm.GetUserById(588)
-	log.Printf("user:%+v", user)
+	var players []game.Player
+	db.Db.Debug().Table("fa_game_player p").
+		Select("p.user_id,p.room_id,p.role,p.status,count(*) cn").
+		Joins("left join fa_game_vote v on v.room_id = p.room_id and v.user_id=p.user_id and v.status=1").
+		Where("p.room_id = ? AND p.role = ? AND p.status = ?", 9610, 1, 1).
+		Group("user_id").
+		Order("cn desc").
+		Limit(3).
+		Find(&players)
+	log.Printf("players:%+v", players)
+	//fmt.Printf("result:%+v", votes)
 }
