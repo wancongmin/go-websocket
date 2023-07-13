@@ -283,7 +283,6 @@ func Referee(roomId string, room Room, winRole int, players []Player) {
 	ClearPlayersCache(roomId)
 	winnerData := make(map[string]interface{}) //获得胜利玩家信息
 	winnerData["winRole"] = winRole
-	//var winPlayers []Player
 	var winPlayers []*Player
 	if winRole == 1 {
 		// 获胜狼的列表

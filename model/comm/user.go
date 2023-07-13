@@ -168,6 +168,7 @@ func GetUserById(uid uint32) User {
 		db.Db.Table("fa_user").
 			Where("id = ?", uid).
 			First(&user)
+		user.Avatar = utils.RoundThumb(user.Avatar, "100", "0")
 		marshal, err := json.Marshal(user)
 		if err == nil {
 			redis.Redis.Set(key, marshal, 120*time.Second)

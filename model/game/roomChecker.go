@@ -73,7 +73,7 @@ func (h *RoomChecker) check() {
 		return
 	}
 	//定时检查投票信息
-
+	CheckVoteByRoomId(h.GameRoom.Id)
 	//定时推送房间信息
 	h.sendRoomInfoToPlayers(room)
 }
@@ -160,8 +160,6 @@ func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 			return false
 		}
 	}
-	// 检查投票信息
-	CheckVoteByRoomId(h.GameRoom.Id)
 	return true
 }
 

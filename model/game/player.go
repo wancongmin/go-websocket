@@ -120,7 +120,7 @@ func ErrorOutRoom(player Player, errorMsg string) {
 		Code: 1,
 		Msg:  errorMsg,
 	}
-	SendMessage(player.UserId, 207, msg)
+	SendMessage(player.UserId, 217, msg)
 	log.Printf("【Game】用户异常退出房间:%d", player.UserId)
 }
 
