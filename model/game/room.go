@@ -239,6 +239,11 @@ func CloseRoom(room Room, errorMsg string) {
 func StartArrest(room Room) {
 	db.Db.Table("fa_game_room").Where("id = ?", room.Id).Updates(Player{Status: 2})
 	ClearRoomCache(room.Id)
+	msg := comm.ResponseMsg{
+		Code: 1,
+		Msg:  "开始抓捕",
+	}
+	SendMsgToPlayers(room.Id, 0, []Player{}, 208, msg)
 }
 
 // Referee 游戏结果裁决
@@ -307,13 +312,13 @@ func Referee(roomId string, room Room, winRole int, players []Player) {
 		Msg:  "游戏结束",
 		Data: winnerData,
 	}
-	SendMsgToPlayers(room.Id, 0, players, 208, msg)
-	msg = comm.ResponseMsg{
-		Code: 1,
-		Msg:  "游戏失败，请再接再厉！",
-		Data: room,
-	}
-	SendMsgToPlayers(room.Id, loseRole, players, 208, msg)
+	SendMsgToPlayers(room.Id, 0, players, 209, msg)
+	//msg = comm.ResponseMsg{
+	//	Code: 1,
+	//	Msg:  "游戏失败，请再接再厉！",
+	//	Data: room,
+	//}
+	//SendMsgToPlayers(room.Id, loseRole, players, 209, msg)
 	log.Printf("【Game】游戏结束,roomId:%s,winRole:%d", room.Id, winRole)
 }
 
