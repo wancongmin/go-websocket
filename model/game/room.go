@@ -308,12 +308,12 @@ func Referee(roomId string, room Room, winRole int, players []Player) {
 		Data: winnerData,
 	}
 	SendMsgToPlayers(room.Id, 0, players, 208, msg)
-	//msg = comm.ResponseMsg{
-	//	Code: 1,
-	//	Msg:  "游戏失败，请再接再厉！",
-	//	Data: room,
-	//}
-	//SendMsgToPlayers(room.Id, loseRole, players, 208, msg)
+	msg = comm.ResponseMsg{
+		Code: 1,
+		Msg:  "游戏失败，请再接再厉！",
+		Data: room,
+	}
+	SendMsgToPlayers(room.Id, loseRole, players, 208, msg)
 	log.Printf("【Game】游戏结束,roomId:%s,winRole:%d", room.Id, winRole)
 }
 
