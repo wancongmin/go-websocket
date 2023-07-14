@@ -21,6 +21,7 @@ type Player struct {
 	ErrorMsg       string    `gorm:"error_msg"`
 	User           comm.User `gorm:"-"`
 	LastActiveTime int64     `gorm:"-" json:"-"`
+	Distance       float64   `gorm:"-"`
 }
 
 type EnterRoomResMsg struct {
@@ -92,9 +93,9 @@ func ClearPlayersCache(roomId string) {
 }
 
 // GetOlinePlayers 获取有定位信息的用户数据
-func GetOlinePlayers(roomId string) []Player {
+func GetOlinePlayers(players []Player) []Player {
 	var resPlayers []Player
-	players := GetRunningPlayersByRoomId(roomId)
+	//players := GetRunningPlayersByRoomId(roomId)
 	for _, player := range players {
 		// 用户不在线
 		olinePlayer := core.WorldMgrObj.GetPlayerByPID(player.UserId)

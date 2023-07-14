@@ -8,6 +8,7 @@ import (
 	"websocket/core"
 	"websocket/lib/mylog"
 	"websocket/model/comm"
+	"websocket/utils"
 )
 
 type RoomChecker struct {
@@ -167,12 +168,11 @@ func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 func (h *RoomChecker) sendRoomInfoToPlayers(room Room) {
 	data := make(map[string]interface{})
 	data["Room"] = room
-	if room.Status == 1 {
-		data["OnlinePlayers"] = []Player{}
-	} else {
-		data["OnlinePlayers"] = GetOlinePlayers(room.Id) //在线玩家
-	}
 	players := GetRunningPlayersByRoomId(room.Id) //所有玩家
+	var onlinePlayers []Player
+	if room.Status != 1 {
+		onlinePlayers = GetOlinePlayers(players) //在线玩家
+	}
 	ruleOneNum, ruleTowNum := GetRuleNum(players)
 	data["RuleOneNum"] = ruleOneNum
 	data["RuleTowNum"] = ruleTowNum
@@ -180,6 +180,20 @@ func (h *RoomChecker) sendRoomInfoToPlayers(room Room) {
 	data["finishVoteNum"] = GetFinishVoteNum(room.Id)
 	var successNum = 0
 	for _, player := range players {
+		// 计算玩家距离
+		for k, onlinePlayer := range onlinePlayers {
+			if player.Id == onlinePlayer.Id {
+				continue
+			}
+			user, err := comm.GetUserTempLocation(player.UserId)
+			if err != nil {
+				continue
+			}
+			log.Printf("lat1:%s,lng1:%s,lat2:%s,lng2:%s", user.Latitude, user.Longitude, onlinePlayer.User.Latitude, onlinePlayer.User.Longitude)
+			distance, _ := utils.EarthDistance(user.Latitude, user.Longitude, onlinePlayer.User.Latitude, onlinePlayer.User.Longitude)
+			onlinePlayers[k].Distance = distance
+		}
+		data["OnlinePlayers"] = onlinePlayers
 		data["Self"] = player
 		msg := comm.ResponseMsg{
 			Code: 1,

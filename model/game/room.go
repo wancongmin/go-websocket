@@ -85,7 +85,6 @@ func CreateRoom(request impl.IRequest, userId uint32) (Room, error) {
 		db.Db.Table("fa_game_room").
 			Where("id = ?", roomId).
 			First(&room)
-		log.Printf("创建room:%+v", room)
 		if room.Id == "" {
 			break
 		}
