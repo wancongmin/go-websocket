@@ -163,3 +163,18 @@ func GetRuleNum(players []Player) (ruleOneNum, ruleTowNum int) {
 	}
 	return roleOneNum, roleTowNum
 }
+
+// GetRunningPlayer 获取玩家信息
+func CheckActive(uid uint32) bool {
+	//检查用户是否在线
+	oline := core.WorldMgrObj.GetPlayerByPID(uid)
+	if oline == nil {
+		return false
+	}
+	//检查用户是否正确上传定位信息
+	_, err := comm.GetUserTempLocation(uid)
+	if err != nil {
+		return false
+	}
+	return true
+}

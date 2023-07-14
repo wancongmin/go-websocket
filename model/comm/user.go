@@ -92,7 +92,7 @@ func SetUserLocation(request User) {
 	if !isGhost {
 		redis.Redis.Set(mpaKey, marshal, base.MapLocationExpire*time.Second)
 	}
-	redis.Redis.Set(tempMpaKey, marshal, 3600*time.Second)
+	redis.Redis.Set(tempMpaKey, marshal, 300*time.Second)
 }
 
 func GetUserLocation(userId uint32) User {

@@ -5,7 +5,6 @@ import (
 	"log"
 	"sync"
 	"time"
-	"websocket/core"
 	"websocket/lib/mylog"
 	"websocket/model/comm"
 	"websocket/utils"
@@ -121,29 +120,15 @@ func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 		if player.Role == 2 {
 			roleTowNum++
 		}
-		//检查用户异常时长
-		currentPlayer := h.GetPlayerByUid(player.UserId)
-		if currentPlayer == nil {
+		if CheckActive(player.UserId) {
 			player.LastActiveTime = time.Now().Unix()
 			h.SuperPlayer(&player)
-			continue
 		}
-		if (currentPlayer.LastActiveTime + 60) < time.Now().Unix() {
+		//检查用户异常时长
+		currentPlayer := h.GetPlayerByUid(player.UserId)
+		if (currentPlayer.LastActiveTime + 120) < time.Now().Unix() {
 			ErrorOutRoom(player, "当前连接异常或长时间未上传定位信息")
 		}
-		//检查用户是否在线
-		oline := core.WorldMgrObj.GetPlayerByPID(player.UserId)
-		if oline == nil {
-			continue
-		}
-		//检查用户是否正确上传定位信息
-		user, err := comm.GetUserTempLocation(player.UserId)
-		if err != nil {
-			continue
-		}
-		player.User = user
-		player.LastActiveTime = time.Now().Unix()
-		h.SuperPlayer(&player)
 	}
 	if room.Status == 1 || room.Status == 2 {
 		// 角色2胜利
