@@ -180,16 +180,17 @@ func (h *RoomChecker) sendRoomInfoToPlayers(room Room) {
 	data["finishVoteNum"] = GetFinishVoteNum(room.Id)
 	var successNum = 0
 	for _, player := range players {
+		user, err := comm.GetUserTempLocation(player.UserId)
+		if err != nil {
+			mylog.Error("获取临时定为信息错误:" + err.Error())
+			continue
+		}
+		player.User = user
 		// 计算玩家距离
 		for k, onlinePlayer := range onlinePlayers {
 			if player.Id == onlinePlayer.Id {
 				continue
 			}
-			user, err := comm.GetUserTempLocation(player.UserId)
-			if err != nil {
-				continue
-			}
-			log.Printf("lat1:%s,lng1:%s,lat2:%s,lng2:%s", user.Latitude, user.Longitude, onlinePlayer.User.Latitude, onlinePlayer.User.Longitude)
 			distance, _ := utils.EarthDistance(user.Latitude, user.Longitude, onlinePlayer.User.Latitude, onlinePlayer.User.Longitude)
 			onlinePlayers[k].Distance = distance
 		}
