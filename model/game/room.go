@@ -283,7 +283,7 @@ func Referee(roomId string, room Room, winRole int, players []Player) {
 	ClearPlayersCache(roomId)
 	winnerData := make(map[string]interface{}) //获得胜利玩家信息
 	winnerData["winRole"] = winRole
-	var winPlayers []*Player
+	var winPlayers []Player
 	if winRole == 1 {
 		// 获胜狼的列表
 		db.Db.Table("fa_game_player p").
@@ -298,12 +298,14 @@ func Referee(roomId string, room Room, winRole int, players []Player) {
 		// 获胜羊的列表
 		for _, player := range players {
 			if player.Role == 2 {
-				winPlayers = append(winPlayers, &player)
+				winPlayers = append(winPlayers, player)
 			}
 		}
 	}
-	for _, player := range winPlayers {
-		player.User = comm.GetUserById(player.UserId)
+	for k, player := range winPlayers {
+		user := comm.GetUserById(player.UserId)
+		user.Avatar = utils.Thumb(user.Avatar, "100")
+		winPlayers[k].User = user
 	}
 	winnerData["winPlayers"] = winPlayers
 	msg := comm.ResponseMsg{
