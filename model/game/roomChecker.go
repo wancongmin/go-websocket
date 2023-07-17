@@ -121,8 +121,8 @@ func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 		}
 		if CheckActive(player.UserId) {
 			player.LastActiveTime = time.Now().Unix()
-			h.SuperPlayer(&player)
 		}
+		h.SuperPlayer(&player)
 		//检查用户异常时长
 		currentPlayer := h.GetPlayerByUid(player.UserId)
 		if (currentPlayer.LastActiveTime + 120) < time.Now().Unix() {
