@@ -6,6 +6,7 @@ import (
 	"time"
 	"websocket/core"
 	"websocket/lib/db"
+	"websocket/lib/mylog"
 	"websocket/lib/redis"
 	"websocket/model/comm"
 	"websocket/utils"
@@ -164,7 +165,7 @@ func GetRuleNum(players []Player) (ruleOneNum, ruleTowNum int) {
 	return roleOneNum, roleTowNum
 }
 
-// GetRunningPlayer 获取玩家信息
+// CheckActive 获取玩家信息
 func CheckActive(uid uint32) bool {
 	//检查用户是否在线
 	oline := core.WorldMgrObj.GetPlayerByPID(uid)
@@ -177,4 +178,25 @@ func CheckActive(uid uint32) bool {
 		return false
 	}
 	return true
+}
+
+func PlayerDistance(uid uint32, roomStatus int, players []Player) (comm.User, []Player) {
+	user, err := comm.GetUserTempLocation(uid)
+	var respPlayer []Player
+	if err != nil {
+		mylog.Error("获取临时定为信息错误:" + err.Error())
+		return user, respPlayer
+	}
+	// 计算玩家距离
+	for _, player := range players {
+		if uid != player.UserId {
+			distance, _ := utils.EarthDistance(user.Latitude, user.Longitude, player.User.Latitude, player.User.Longitude)
+			player.Distance = distance
+		}
+		if roomStatus == 1 && uid != player.UserId {
+			continue
+		}
+		respPlayer = append(respPlayer, player)
+	}
+	return user, respPlayer
 }
