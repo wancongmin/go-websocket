@@ -2,6 +2,7 @@ package game
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 	"websocket/core"
@@ -19,6 +20,7 @@ type Player struct {
 	Role           int       `gorm:"room_id"`
 	Status         int       `gorm:"status"`
 	CreateTime     int64     `gorm:"create_time"`
+	UpdateTime     int64     `gorm:"update_time"`
 	ErrorMsg       string    `gorm:"error_msg"`
 	User           comm.User `gorm:"-"`
 	LastActiveTime int64     `gorm:"-" json:"-"`
@@ -118,13 +120,18 @@ func GetOlinePlayers(players []Player) []Player {
 // ErrorOutRoom 异常退出房间
 func ErrorOutRoom(player Player, errorMsg string) {
 	db.Db.Table("fa_game_player").
-		Where("id = ? AND status = ?", player.Id, 0).Updates(Player{Status: 6, ErrorMsg: errorMsg})
+		Where("id = ? AND status = ?", player.Id, 0).Updates(Player{Status: 6, ErrorMsg: errorMsg, UpdateTime: time.Now().Unix()})
 	ClearPlayersCache(player.RoomId)
+	//msg := comm.ResponseMsg{
+	//	Code: 1,
+	//	Msg:  errorMsg,
+	//}
+	//SendMessage(player.UserId, 217, msg)
 	msg := comm.ResponseMsg{
 		Code: 1,
 		Msg:  errorMsg,
 	}
-	SendMessage(player.UserId, 217, msg)
+	SendMsgToPlayers(player.RoomId, 0, []Player{}, 217, msg)
 	log.Printf("【Game】用户异常退出房间:%d", player.UserId)
 }
 
@@ -170,11 +177,13 @@ func CheckActive(uid uint32) bool {
 	//检查用户是否在线
 	oline := core.WorldMgrObj.GetPlayerByPID(uid)
 	if oline == nil {
+		mylog.Info(fmt.Sprintf("用户不在线ID:%d", uid))
 		return false
 	}
 	//检查用户是否正确上传定位信息
 	_, err := comm.GetUserTempLocation(uid)
 	if err != nil {
+		mylog.Info(fmt.Sprintf("用户未上传定位ID:%d", uid))
 		return false
 	}
 	return true
