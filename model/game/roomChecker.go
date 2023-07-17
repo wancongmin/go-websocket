@@ -123,7 +123,7 @@ func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 		//检查用户异常时长
 		currentPlayer := h.GetPlayerByUid(player.UserId)
 		if currentPlayer != nil {
-			if (currentPlayer.LastActiveTime + 120) < time.Now().Unix() {
+			if (currentPlayer.LastActiveTime + 300) < time.Now().Unix() {
 				ErrorOutRoom(player, "当前连接异常或长时间未上传定位信息")
 			}
 			player.LastActiveTime = currentPlayer.LastActiveTime
