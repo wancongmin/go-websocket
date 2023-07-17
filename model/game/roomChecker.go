@@ -119,15 +119,19 @@ func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 		if player.Role == 2 {
 			roleTowNum++
 		}
+
+		//检查用户异常时长
+		currentPlayer := h.GetPlayerByUid(player.UserId)
+		if currentPlayer != nil {
+			if (currentPlayer.LastActiveTime + 120) < time.Now().Unix() {
+				ErrorOutRoom(player, "当前连接异常或长时间未上传定位信息")
+			}
+			player.LastActiveTime = currentPlayer.LastActiveTime
+		}
 		if CheckActive(player.UserId) {
 			player.LastActiveTime = time.Now().Unix()
 		}
 		h.SuperPlayer(&player)
-		//检查用户异常时长
-		currentPlayer := h.GetPlayerByUid(player.UserId)
-		if (currentPlayer.LastActiveTime + 120) < time.Now().Unix() {
-			ErrorOutRoom(player, "当前连接异常或长时间未上传定位信息")
-		}
 	}
 	if room.Status == 2 {
 		// 角色2胜利
