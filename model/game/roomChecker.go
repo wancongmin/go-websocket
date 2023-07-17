@@ -130,7 +130,7 @@ func (h *RoomChecker) CheckRoomPlayers(room Room) bool {
 			ErrorOutRoom(player, "当前连接异常或长时间未上传定位信息")
 		}
 	}
-	if room.Status == 1 || room.Status == 2 {
+	if room.Status == 2 {
 		// 角色2胜利
 		if roleOneNum == 0 {
 			log.Printf("【Game】游戏结束,房间没有在线猎人,roomId:%s", room.Id)
