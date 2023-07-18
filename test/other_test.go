@@ -11,6 +11,7 @@ import (
 	"websocket/lib/db"
 	"websocket/lib/redis"
 	"websocket/model/game"
+	"websocket/utils"
 )
 
 var ConfFile *ini.File
@@ -50,23 +51,46 @@ func Decimal(num float64) float64 {
 }
 
 func TestGetPlayersByRoomId(t *testing.T) {
-	onlinePlayers := []game.Player{{Id: 5}, {Id: 6}}
+	var allPlayerNum int64
+	db.Db.Table("fa_game_player").Where("room_id = ? AND status = ?", 1554, 0).Count(&allPlayerNum)
 
-	for i, _ := range onlinePlayers {
-		//onlinePlayer.Id = 1
-		onlinePlayers[i].Id = 6
+	val := utils.GetConfVal("game_hunter_rate")
+	float, err := strconv.ParseFloat(val, 64)
+	var roleOne float64 = 1
+	if err == nil {
+		num := math.Floor(float64(allPlayerNum) * float / 100)
+		roleOne = math.Max(num, 1)
 	}
-	fmt.Printf("result:%+v", onlinePlayers)
-	//var winPlayers []game.Player
-	//// 获胜狼的列表
-	//db.Db.Table("fa_game_player p").
-	//	Select("p.user_id,p.room_id,p.role,p.status,count(*) cn").
-	//	Joins("left join fa_game_vote v on v.room_id = p.room_id and v.user_id=p.user_id and v.status=1").
-	//	Where("p.room_id = ? AND p.role = ? AND p.status = ?", 6051, 1, 1).
-	//	Group("user_id").
-	//	Order("cn desc").
-	//	Limit(3).
-	//	Find(&winPlayers)
-	//log.Printf("players:%+v", winPlayers)
-
+	//分配角色
+	//if err = db.Db.Debug().Table("fa_game_player").
+	//	Where("room_id = ? AND status = ?", 1554, 0).
+	//	Order("rand()").
+	//	Limit(int(roleOne)).
+	//	Updates(game.Player{Role: 1}).Error; err != nil {
+	//	fmt.Println(err)
+	//}
+	//
+	//return
+	//开始抓捕
+	tx := db.Db.Begin()
+	if err = tx.Table("fa_game_room").Where("id = ?", 1554).Updates(game.Room{Status: 2}).Error; err != nil {
+		tx.Rollback()
+		return
+	}
+	//分配角色
+	if err = tx.Table("fa_game_player").
+		Where("room_id = ? AND status = ?", 1554, 0).
+		Order("rand()").
+		Limit(int(roleOne)).
+		Updates(game.Player{Role: 1}).Error; err != nil {
+		tx.Rollback()
+		return
+	}
+	if err = tx.Table("fa_game_player").
+		Where("room_id = ? AND status = ?", 1554, 0).
+		Updates(game.Player{Role: 2}).Error; err != nil {
+		tx.Rollback()
+		return
+	}
+	tx.Commit()
 }

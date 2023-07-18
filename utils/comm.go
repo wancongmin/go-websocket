@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 	"websocket/config"
+	"websocket/lib/db"
 	"websocket/lib/mylog"
 )
 
@@ -104,4 +105,18 @@ func EarthDistance(latitude1, longitude1, latitude2, longitude2 string) (float64
 func Decimal(num float64) float64 {
 	num, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", num), 64)
 	return num
+}
+
+type ConfigData struct {
+	Id    int
+	Name  string
+	Value string
+}
+
+func GetConfVal(name string) string {
+	var conf ConfigData
+	db.Db.Table("fa_config").
+		Where("name = ?", name).
+		First(&conf)
+	return conf.Value
 }

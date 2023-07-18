@@ -110,7 +110,7 @@ func CheckJudgeVote(vote Vote, players []Player) {
 func GetFinishVoteNum(roomId string) int64 {
 	var count int64
 	db.Db.Table("fa_game_vote").
-		Where("room_id = ? AND status in ?", roomId, []int{-1, 0}).
+		Where("room_id = ? AND status in ?", roomId, []int{1, 0}).
 		Find(&count)
 	return count
 }

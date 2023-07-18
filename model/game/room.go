@@ -6,7 +6,9 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
+	"strconv"
 	"time"
 	"websocket/config"
 	"websocket/impl"
@@ -237,8 +239,39 @@ func CloseRoom(room Room, errorMsg string) {
 
 // StartArrest 开始抓捕
 func StartArrest(room Room) {
-	db.Db.Table("fa_game_room").Where("id = ?", room.Id).Updates(Player{Status: 2})
+	var allPlayerNum int64
+	db.Db.Table("fa_game_player").Where("room_id = ? AND status = ?", room.Id, 0).Count(&allPlayerNum)
+	val := utils.GetConfVal("game_hunter_rate")
+	float, err := strconv.ParseFloat(val, 64)
+	var roleOne float64 = 1
+	if err == nil {
+		num := math.Floor(float64(allPlayerNum) * float / 100)
+		roleOne = math.Max(num, 1)
+	}
+	//开始抓捕
+	tx := db.Db.Begin()
+	if err = tx.Table("fa_game_room").Where("id = ?", room.Id).Updates(Room{Status: 2}).Error; err != nil {
+		tx.Rollback()
+		return
+	}
+	//分配角色
+	if err = tx.Table("fa_game_player").
+		Where("room_id = ? AND status = ?", room.Id, 0).
+		Order("rand()").
+		Limit(int(roleOne)).
+		Updates(Player{Role: 1}).Error; err != nil {
+		tx.Rollback()
+		return
+	}
+	if err = tx.Table("fa_game_player").
+		Where("room_id = ? AND status = ? and role= ?", room.Id, 0, 0).
+		Updates(Player{Role: 2}).Error; err != nil {
+		tx.Rollback()
+		return
+	}
+	tx.Commit()
 	ClearRoomCache(room.Id)
+	ClearPlayersCache(room.Id)
 	msg := comm.ResponseMsg{
 		Code: 1,
 		Msg:  "开始抓捕",
