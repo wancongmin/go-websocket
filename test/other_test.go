@@ -51,6 +51,10 @@ func Decimal(num float64) float64 {
 }
 
 func TestGetPlayersByRoomId(t *testing.T) {
+	res := game.GetFinishVoteNum("9610")
+	fmt.Println(res)
+	return
+
 	var allPlayerNum int64
 	db.Db.Table("fa_game_player").Where("room_id = ? AND status = ?", 1554, 0).Count(&allPlayerNum)
 
