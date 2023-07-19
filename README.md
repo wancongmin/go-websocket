@@ -1,7 +1,7 @@
 # go-websocket
 
 #### 介绍
-消息处理框架
+go语言WebSocket连接框架
 
 #### 软件架构
 软件架构说明

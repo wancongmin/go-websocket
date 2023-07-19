@@ -34,9 +34,6 @@ func DoConnectionBegin(conn impl.Iconnection) {
 
 // 链接断开执行的钩子函数
 func DoConnectionLost(conn impl.Iconnection) {
-	//log.Println("====>DoConnectionLost is Call")
-	//log.Println("====>conn ID =", conn.GetConnID())
-
 	//根据pID获取对应的玩家对象
 	player := core.WorldMgrObj.GetPlayerByPID(conn.GetConnID())
 
@@ -45,13 +42,6 @@ func DoConnectionLost(conn impl.Iconnection) {
 		player.LostConnection()
 	}
 	log.Printf("【下线成功】ID:%d，plays:%v", conn.GetConnID(), core.WorldMgrObj.GetAllPlayerIds())
-	//获取链接属性
-	//if val, err := conn.GetProperty("name"); err == nil {
-	//	log.Println("name", val)
-	//}
-	//if val, err := conn.GetProperty("home"); err == nil {
-	//	log.Println("home", val)
-	//}
 }
 
 // User-defined heartbeat message processing method
@@ -94,9 +84,6 @@ func main() {
 	s := service.NewServer("funParty")
 	//s.AddRouter(100, &router.PingRouter{})
 	s.AddRouter(101, &router.LocationRouter{})
-	s.AddRouter(102, &router.ChangeGroupRouter{})
-	s.AddRouter(105, &router.CreateRoom{})
-
 	//注册连接的Hook钩子函数
 	s.SetConnStart(DoConnectionBegin)
 	s.SetConnStop(DoConnectionLost)

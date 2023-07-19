@@ -1,0 +1,32 @@
+[conf]
+Port = 8090
+MaxConnect = 10000
+
+[database]
+Type = mysql
+User = root
+Password = root
+Host = 127.0.0.1:3306
+Name = websocket
+
+[redis]
+Host = 127.0.0.1:6379
+Password = ""
+Select = 0
+PoolSize= 25
+
+[token]
+# 驱动方式
+Type = Mysql
+#// 缓存前缀
+Key = b9dat71ZgAWFkSzu5D8NeqsjnrxGR6Vm
+#// 缓存有效期 0表示永久缓存
+
+
+[base]
+MapLocationExpire = 7200
+#心跳最大检测时间
+HeartbeatMax = 600
+
+
+

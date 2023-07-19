@@ -6,15 +6,12 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 	"websocket/config"
-	"websocket/core"
 	"websocket/impl"
 	"websocket/lib/db"
 	"websocket/lib/mylog"
 	"websocket/lib/redis"
-	"websocket/model/club"
 	"websocket/model/comm"
 	"websocket/utils"
 	"websocket/utils/token"
@@ -118,10 +115,6 @@ func (s *Server) wsPage(res http.ResponseWriter, req *http.Request) {
 	}
 	dealConn := NewConnetion(s, conn, cid, s.MsgHandle)
 
-	//用户属性
-	userType := comm.GetUserType(cid)
-	dealConn.SetProperty("type", userType.Type)
-	dealConn.SetProperty("roomId", userType.RoomId)
 	// HeartBeat check
 	if s.hc != nil {
 		// Clone a heart-beat checker from the server side
@@ -143,7 +136,6 @@ func (s *Server) Server() {
 	//启动server 的服务器功能
 	s.Start()
 	// TODO 做一些启动服务器之后的额外工作
-	go s.LocationWork()
 	//从消息队列中
 	go s.MessageQueue()
 	//阻塞状态
@@ -174,68 +166,6 @@ func (s *Server) MessageQueue() {
 			}
 			comm.SendPlayerMessage(toId, queueMsg.MsgId, msg)
 		}
-	}
-}
-
-// 发送定位消息给用户
-func (s *Server) LocationWork() {
-	defer utils.CustomError()
-	for {
-		//for _, conn := range s.GetConnMgr().GetTotalConnections() {
-		for _, player := range core.WorldMgrObj.GetAllPlayers() {
-			conn := player.Conn
-			typeVal, err := conn.GetProperty("type")
-			if err != nil {
-				continue
-			}
-			roomType := typeVal.(string)
-			userId := conn.GetConnID()
-			var message comm.SendLocationMsg
-			message.MsgId = 201
-			message.Type = roomType
-			message.UserId = userId
-			switch roomType {
-			case "1":
-				// TODO 获取密友定位
-				message.Users = comm.GetFriendLocation(userId)
-			case "2", "3":
-				// TODO 获取活动成员定位
-				roomIdVal, err := conn.GetProperty("roomId")
-				if err != nil {
-					continue
-				}
-				roomId, err := strconv.Atoi(roomIdVal.(string))
-				if err != nil {
-					continue
-				}
-				if roomId == 0 && len(roomIdVal.(string)) > 0 {
-					f, err := strconv.ParseFloat(roomIdVal.(string), 64)
-					if err != nil {
-						log.Println("get roomId err")
-						continue
-					}
-					roomId = int(f)
-				}
-				if roomType == "2" {
-					message.Users = club.GetActivityMemberLocation(roomId, userId)
-				} else {
-					message.Users = club.GetClubMemberLocation(roomId, userId)
-				}
-				message.RoomId = roomId
-			default:
-				time.Sleep(3 * time.Second)
-				continue
-			}
-			marshal, err := json.Marshal(message)
-			if err != nil {
-				continue
-			}
-			//if conn, ok := s.GetConnMgr().GetTotalConnections()[userId]; ok {
-			//	conn.SendMsg(201, marshal)
-			//}
-			conn.SendMsg(201, marshal)
-		}
-		time.Sleep(3 * time.Second)
 	}
 }
 
