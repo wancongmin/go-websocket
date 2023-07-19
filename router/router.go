@@ -17,12 +17,6 @@ type HolleRouter struct {
 type PingRouter struct {
 	service.BaseRouter
 }
-type LocationRouter struct {
-	service.BaseRouter
-}
-type ChangeGroupRouter struct {
-	service.BaseRouter
-}
 
 // Handle MsgId=100  心跳
 func (this *PingRouter) Handle(request impl.IRequest) {

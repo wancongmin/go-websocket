@@ -76,14 +76,17 @@ func (r *myHeartBeatRouter) Handle(request impl.IRequest) {
 
 func main() {
 	defer utils.CustomError()
+	// 初始化配置
 	config.InitConf("")
+	//初始化mysql
 	db.InitDb()
+	//初始化redis
 	redis.InitRedis()
 	utils.InitGlobalConf()
 	//创建server句柄，使用api
-	s := service.NewServer("funParty")
-	//s.AddRouter(100, &router.PingRouter{})
-	s.AddRouter(101, &router.LocationRouter{})
+	s := service.NewServer("websocket")
+	// 心跳
+	s.AddRouter(101, &router.PingRouter{})
 	//注册连接的Hook钩子函数
 	s.SetConnStart(DoConnectionBegin)
 	s.SetConnStop(DoConnectionLost)
